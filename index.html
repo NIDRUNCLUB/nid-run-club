@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NID RUN CLUB — 團隊系統</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ── BRAND TOKENS ── */
+:root {
+  --black:    #0A0A0A;
+  --black2:   #111111;
+  --black3:   #1A1A1A;
+  --black4:   #222222;
+  --black5:   #2E2E2E;
+  --yellow:   #FFE500;
+  --yellow2:  #FFD000;
+  --yellow3:  #FFF176;
+  --white:    #F5F5F0;
+  --gray1:    #888880;
+  --gray2:    #555550;
+  --gray3:    #333330;
+  --red:      #FF1926;
+  --orange:   #FF7F00;
+  --green:    #22CE00;
+
+  --social-c: #FFE500;
+  --admin-c:  #4CD8FF;
+  --event-c:  #FF7F00;
+
+  --radius:    8px;
+  --radius-sm: 4px;
+  --radius-lg: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans TC', 'Barlow', sans-serif;
+  background: var(--black);
+  color: var(--white);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--black2);
+  border-bottom: 1px solid var(--black5);
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+
+.logo-lockup {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* SVG logo inline */
+.logo-text {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  line-height: 1;
+}
+.logo-nid {
+  font-family: 'Bebas Neue', 'Barlow Condensed', sans-serif;
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--yellow);
+  text-transform: uppercase;
+}
+.logo-dot {
+  font-family: 'Bebas Neue', 'Barlow Condensed', sans-serif;
+  font-size: 26px;
+  font-weight: 400;
+  color: var(--yellow);
+}
+.logo-rc {
+  font-family: 'Bebas Neue', 'Barlow Condensed', sans-serif;
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--white);
+  text-transform: uppercase;
+}
+
+.logo-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--black5);
+}
+
+.logo-subtitle {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--gray1);
+  text-transform: uppercase;
+}
+
+.header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-date {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--gray1);
+}
+
+/* ── LAYOUT ── */
+.app { display: flex; }
+
+.sidebar {
+  width: 210px;
+  background: var(--black2);
+  border-right: 1px solid var(--black5);
+  min-height: calc(100vh - 60px);
+  position: sticky;
+  top: 60px;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+  padding: 20px 0;
+  flex-shrink: 0;
+}
+
+.sidebar-section { margin-bottom: 8px; }
+
+.sidebar-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--gray2);
+  text-transform: uppercase;
+  padding: 0 16px;
+  margin-bottom: 4px;
+  margin-top: 16px;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 16px;
+  border: none;
+  background: transparent;
+  color: var(--gray1);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+  position: relative;
+}
+.nav-btn:hover { color: var(--white); background: var(--black3); }
+.nav-btn.active {
+  color: var(--yellow);
+  background: rgba(255,229,0,0.06);
+  border-left-color: var(--yellow);
+  font-weight: 500;
+}
+.nav-icon { font-size: 15px; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 99px;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.04em;
+}
+
+/* ── CONTENT ── */
+.content {
+  flex: 1;
+  padding: 28px;
+  max-width: 960px;
+  min-width: 0;
+}
+
+.page { display: none; animation: fadeIn 0.2s ease; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.7); } }
+
+/* ── PAGE HEADER ── */
+.page-header { margin-bottom: 28px; }
+.page-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--white);
+  line-height: 1;
+}
+.page-title span { color: var(--yellow); }
+.page-subtitle {
+  font-size: 13px;
+  color: var(--gray1);
+  margin-top: 4px;
+}
+
+/* ── CARDS ── */
+.card {
+  background: var(--black3);
+  border: 1px solid var(--black5);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gray1);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-title::after { content: ''; flex: 1; height: 1px; background: var(--black5); }
+
+/* ── METRICS ── */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.metric-card {
+  background: var(--black3);
+  border: 1px solid var(--black5);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--black5);
+}
+.metric-card.yellow::before { background: var(--yellow); }
+.metric-card.red::before { background: var(--red); }
+.metric-card.orange::before { background: var(--orange); }
+.metric-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gray1);
+  margin-bottom: 6px;
+}
+.metric-value {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--white);
+  letter-spacing: -0.01em;
+}
+.metric-card.yellow .metric-value { color: var(--yellow); }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.badge-ok     { background: rgba(34,206,0,0.15);  color: var(--green); }
+.badge-warn   { background: rgba(255,127,0,0.15); color: var(--orange); }
+.badge-danger { background: rgba(255,25,38,0.15); color: var(--red); }
+.badge-social { background: rgba(255,229,0,0.12); color: var(--yellow); }
+.badge-admin  { background: rgba(76,216,255,0.12); color: var(--admin-c); }
+.badge-event  { background: rgba(255,127,0,0.12); color: var(--event-c); }
+
+/* ── FORMS ── */
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-group { margin-bottom: 14px; }
+.form-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gray1);
+  margin-bottom: 6px;
+  display: block;
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--black4);
+  border: 1px solid var(--black5);
+  border-radius: var(--radius-sm);
+  color: var(--white);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  -webkit-appearance: none;
+}
+.form-input::placeholder, .form-textarea::placeholder { color: var(--gray2); }
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--yellow);
+  box-shadow: 0 0 0 3px rgba(255,229,0,0.1);
+}
+.form-select option { background: var(--black4); color: var(--white); }
+.form-textarea { resize: vertical; min-height: 84px; line-height: 1.6; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1px solid var(--black5);
+  background: var(--black4);
+  color: var(--gray1);
+  transition: all 0.15s;
+}
+.btn:hover { border-color: var(--gray2); color: var(--white); background: var(--black5); }
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: var(--yellow);
+  color: var(--black);
+  border-color: var(--yellow);
+  font-weight: 800;
+}
+.btn-primary:hover { background: var(--yellow2); border-color: var(--yellow2); color: var(--black); }
+.btn-sm { padding: 5px 10px; font-size: 11px; }
+.btn-ghost { background: transparent; border-color: transparent; }
+.btn-ghost:hover { background: var(--black4); border-color: var(--black5); }
+.btn-danger { color: var(--red); }
+.btn-danger:hover { background: rgba(255,25,38,0.1); border-color: rgba(255,25,38,0.3); color: var(--red); }
+
+/* ── MY TODOS ── */
+.name-gate {
+  background: var(--black3);
+  border: 1px solid var(--black5);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+.name-gate-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 28px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+.name-gate-sub { font-size: 13px; color: var(--gray1); margin-bottom: 24px; }
+.name-gate-row { display: flex; gap: 8px; max-width: 280px; margin: 0 auto; }
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--black3);
+  border: 1px solid var(--black5);
+  border-left: 3px solid var(--black5);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.todo-item:hover { transform: translateX(2px); }
+.todo-item.late   { border-left-color: var(--red); }
+.todo-item.warn   { border-left-color: var(--orange); }
+.todo-item.ok     { border-left-color: var(--green); }
+.todo-item-title  { font-size: 14px; font-weight: 500; color: var(--white); }
+.todo-item-meta   {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  color: var(--gray1);
+  letter-spacing: 0.04em;
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.todo-item-content { flex: 1; }
+.todo-done-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--black5); }
+.todo-done-toggle {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.todo-done-toggle:hover { color: var(--gray1); }
+.todo-item-dimmed { opacity: 0.4; }
+.todo-item-dimmed .todo-item-title { text-decoration: line-through; }
+
+/* ── MY TODOS header stats ── */
+.my-stats-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.my-stat-chip {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 3px;
+}
+.my-stat-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--yellow);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex: 1;
+}
+
+/* ── REPORT ── */
+.report-item {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--black5);
+}
+.report-item:last-child { border-bottom: none; padding-bottom: 0; }
+.report-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.report-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--white);
+}
+.report-date {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--gray2);
+  margin-left: auto;
+}
+.report-row { display: flex; gap: 10px; font-size: 13px; color: var(--gray1); margin-bottom: 4px; }
+.report-key {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gray2);
+  padding-top: 2px;
+  white-space: nowrap;
+  min-width: 28px;
+}
+.report-block { color: var(--orange); }
+
+/* ── TABLE ── */
+.filter-row { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid var(--black5);
+  background: transparent;
+  color: var(--gray1);
+  transition: all 0.15s;
+}
+.filter-btn:hover { color: var(--white); border-color: var(--gray2); }
+.filter-btn.active { background: var(--yellow); color: var(--black); border-color: var(--yellow); font-weight: 800; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gray2);
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--black5);
+}
+td {
+  padding: 11px 10px;
+  border-bottom: 1px solid var(--black5);
+  color: var(--gray1);
+  vertical-align: middle;
+}
+td:first-child { color: var(--white); font-weight: 500; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* ── OVERVIEW ── */
+.urgent-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--black5);
+}
+.urgent-item:last-child { border-bottom: none; }
+.urgent-title { font-size: 14px; color: var(--white); font-weight: 500; flex: 1; }
+.urgent-owner { font-size: 12px; color: var(--gray2); white-space: nowrap; }
+
+/* ── STATS ── */
+.team-stat { margin-bottom: 24px; }
+.team-stat-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.team-stat-info { flex: 1; font-size: 12px; color: var(--gray2); }
+.team-stat-rate {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+.progress {
+  height: 6px;
+  background: var(--black5);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill { height: 100%; border-radius: 3px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+
+/* ── DOT ── */
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.dot-ok     { background: var(--green); }
+.dot-warn   { background: var(--orange); }
+.dot-danger { background: var(--red); }
+.dot-neutral { background: var(--gray2); }
+
+/* ── EMPTY ── */
+.empty {
+  text-align: center;
+  padding: 36px 20px;
+  color: var(--gray2);
+  font-size: 13px;
+}
+.empty-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--yellow);
+  color: var(--black);
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 20px rgba(255,229,0,0.3);
+  z-index: 1000;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── OVERVIEW header row ── */
+.overview-report-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--black5);
+}
+.overview-report-item:last-child { border-bottom: none; }
+.overview-report-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--white);
+  white-space: nowrap;
+}
+.overview-report-text {
+  font-size: 12px;
+  color: var(--gray1);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── RUNNER ACCENT ── */
+.runner-line {
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--yellow) 0%, var(--orange) 50%, transparent 100%);
+  margin-bottom: 24px;
+  border-radius: 1px;
+}
+
+/* ── MOBILE ── */
+@media (max-width: 700px) {
+  .sidebar { display: none; }
+  .content { padding: 16px; }
+  .metrics-grid { grid-template-columns: 1fr 1fr; }
+  .form-grid-2 { grid-template-columns: 1fr; }
+  .mobile-nav { display: flex !important; }
+  .content { padding-bottom: 72px; }
+}
+.mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--black2);
+  border-top: 1px solid var(--black5);
+  padding: 6px 4px;
+  z-index: 200;
+  gap: 2px;
+}
+.mob-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 2px;
+  border: none;
+  background: transparent;
+  color: var(--gray2);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+.mob-btn.active { color: var(--yellow); }
+.mob-icon { font-size: 18px; line-height: 1; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo-lockup">
+    <div class="logo-text">
+      <span class="logo-nid">NID</span><span class="logo-dot">.</span>&nbsp;<span class="logo-rc">Run Club</span>
+    </div>
+    <div class="logo-divider"></div>
+    <span class="logo-subtitle">Team System</span>
+  </div>
+  <div id="loading-indicator" style="display:none;align-items:center;gap:8px;margin-right:16px">
+      <div style="width:6px;height:6px;border-radius:50%;background:var(--yellow);animation:pulse 1s infinite"></div>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--gray1);letter-spacing:0.06em;text-transform:uppercase">同步中</span>
+    </div>
+    <div class="header-right">
+    <span class="header-date" id="header-date"></span>
+  </div>
+</header>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">成員</div>
+      <button class="nav-btn active" onclick="switchPage('mytodos',this)">
+        <span class="nav-icon">✅</span> 我的待辦
+      </button>
+      <button class="nav-btn" onclick="switchPage('report',this)">
+        <span class="nav-icon">📝</span> 每日回報
+      </button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">後台管理</div>
+      <button class="nav-btn" onclick="switchPage('overview',this)">
+        <span class="nav-icon">⚡</span> 總覽
+      </button>
+      <button class="nav-btn" onclick="switchPage('manage',this)">
+        <span class="nav-icon">📋</span> 任務管理
+      </button>
+      <button class="nav-btn" onclick="switchPage('stats',this)">
+        <span class="nav-icon">📈</span> 準時率
+      </button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">團隊</div>
+      <div style="padding:8px 16px;display:flex;flex-direction:column;gap:6px">
+        <span class="badge badge-social" style="justify-content:center">社群團隊</span>
+        <span class="badge badge-admin" style="justify-content:center">行政團隊</span>
+        <span class="badge badge-event" style="justify-content:center">活動團隊</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="content">
+
+    <!-- ░░ 我的待辦 ░░ -->
+    <div id="page-mytodos" class="page active">
+      <div class="page-header">
+        <div class="page-title">我的<span> 待辦</span></div>
+        <div class="page-subtitle">輸入你的名字，查看屬於你的所有任務</div>
+      </div>
+
+      <div class="name-gate" id="name-gate">
+        <div class="name-gate-title">你是誰？</div>
+        <div class="name-gate-sub">輸入姓名後即可看到你的個人待辦清單</div>
+        <div class="name-gate-row">
+          <input class="form-input" type="text" id="my-name-input" placeholder="輸入你的姓名" onkeydown="if(event.key==='Enter')loadMyTodos()">
+          <button class="btn btn-primary" onclick="loadMyTodos()">確認 →</button>
+        </div>
+      </div>
+
+      <div id="my-todos-area" style="display:none">
+        <div class="my-stats-row">
+          <div class="my-stat-name" id="my-name-title"></div>
+          <span id="my-chip-late" class="my-stat-chip badge-danger" style="display:none"></span>
+          <span id="my-chip-warn" class="my-stat-chip badge-warn" style="display:none"></span>
+          <span id="my-chip-ok"   class="my-stat-chip badge-ok" style="display:none"></span>
+          <button class="btn btn-ghost btn-sm" onclick="resetMyName()" style="margin-left:8px">切換</button>
+        </div>
+        <div id="my-todo-list"></div>
+        <div id="my-done-section" class="todo-done-section" style="display:none">
+          <div class="todo-done-toggle" onclick="toggleDoneList()">
+            <span id="done-arrow">▸</span> 已完成任務 <span id="my-done-count" style="color:var(--gray2)"></span>
+          </div>
+          <div id="my-done-list" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ░░ 每日回報 ░░ -->
+    <div id="page-report" class="page">
+      <div class="page-header">
+        <div class="page-title">每日<span> 回報</span></div>
+        <div class="page-subtitle">每天下班前填寫，讓主管掌握你的進度</div>
+      </div>
+      <div class="card">
+        <div class="card-title">填寫今日回報</div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">你的姓名</label>
+            <input class="form-input" type="text" id="r-name" placeholder="輸入姓名">
+          </div>
+          <div class="form-group">
+            <label class="form-label">所屬團隊</label>
+            <select class="form-select" id="r-team">
+              <option value="">請選擇</option>
+              <option>社群團隊</option>
+              <option>行政團隊</option>
+              <option>活動團隊</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">今日完成事項</label>
+          <textarea class="form-textarea" id="r-done" placeholder="例：完成 IG 貼文排程、回覆客戶訊息 10 則…"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">明日計畫</label>
+          <textarea class="form-textarea" id="r-plan" placeholder="例：製作活動素材、確認場地報價…" style="min-height:64px"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">問題 / 需要支援</label>
+          <textarea class="form-textarea" id="r-block" placeholder="如無問題請填「無」" style="min-height:56px"></textarea>
+        </div>
+        <div style="display:flex;justify-content:flex-end">
+          <button class="btn btn-primary" onclick="submitReport()">提交回報 →</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">歷史回報</div>
+        <div id="report-history"><div class="empty"><span class="empty-icon">📭</span>尚無回報記錄</div></div>
+      </div>
+    </div>
+
+    <!-- ░░ 總覽 ░░ -->
+    <div id="page-overview" class="page">
+      <div class="page-header">
+        <div class="page-title">後台<span> 總覽</span></div>
+        <div class="page-subtitle">今日回報狀況與即將到期任務</div>
+      </div>
+      <div class="runner-line"></div>
+      <div class="metrics-grid">
+        <div class="metric-card yellow">
+          <div class="metric-label">今日回報</div>
+          <div class="metric-value" id="m-reports">0</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">進行中任務</div>
+          <div class="metric-value" id="m-todos">0</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">整體準時率</div>
+          <div class="metric-value" id="m-ontime">–</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">今日回報狀況</div>
+        <div id="overview-reports"><div class="empty"><span class="empty-icon">⏳</span>今日尚無回報</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">即將到期任務（3天內）</div>
+        <div id="overview-urgent"><div class="empty"><span class="empty-icon">✅</span>目前無即將到期任務</div></div>
+      </div>
+    </div>
+
+    <!-- ░░ 任務管理 ░░ -->
+    <div id="page-manage" class="page">
+      <div class="page-header">
+        <div class="page-title">任務<span> 管理</span></div>
+        <div class="page-subtitle">指派任務並追蹤截止日</div>
+      </div>
+      <div class="card">
+        <div class="card-title">新增任務</div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">任務名稱</label>
+            <input class="form-input" type="text" id="t-title" placeholder="輸入任務內容">
+          </div>
+          <div class="form-group">
+            <label class="form-label">負責人</label>
+            <input class="form-input" type="text" id="t-owner" placeholder="員工姓名">
+          </div>
+          <div class="form-group">
+            <label class="form-label">所屬團隊</label>
+            <select class="form-select" id="t-team">
+              <option value="">請選擇</option>
+              <option>社群團隊</option>
+              <option>行政團隊</option>
+              <option>活動團隊</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">截止日期</label>
+            <input class="form-input" type="date" id="t-deadline">
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end">
+          <button class="btn btn-primary" onclick="addTodo()">新增任務 +</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">全員待辦</div>
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="filterTodos('all',this)">全部</button>
+          <button class="filter-btn" onclick="filterTodos('社群團隊',this)">社群</button>
+          <button class="filter-btn" onclick="filterTodos('行政團隊',this)">行政</button>
+          <button class="filter-btn" onclick="filterTodos('活動團隊',this)">活動</button>
+        </div>
+        <div id="all-todo-list"></div>
+      </div>
+    </div>
+
+    <!-- ░░ 準時率 ░░ -->
+    <div id="page-stats" class="page">
+      <div class="page-header">
+        <div class="page-title">準時率<span> 統計</span></div>
+        <div class="page-subtitle">各團隊任務完成與逾期分析</div>
+      </div>
+      <div class="runner-line"></div>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">總任務數</div>
+          <div class="metric-value" id="s-total">0</div>
+        </div>
+        <div class="metric-card yellow">
+          <div class="metric-label">已完成</div>
+          <div class="metric-value" id="s-done">0</div>
+        </div>
+        <div class="metric-card red">
+          <div class="metric-label">逾期</div>
+          <div class="metric-value" id="s-late">0</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">各團隊準時率</div>
+        <div id="team-stats"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">完成記錄</div>
+        <div id="done-records"><div class="empty"><span class="empty-icon">📋</span>尚無已完成任務</div></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MOBILE NAV -->
+<nav class="mobile-nav">
+  <button class="mob-btn active" onclick="switchPage('mytodos',this)"><span class="mob-icon">✅</span>待辦</button>
+  <button class="mob-btn" onclick="switchPage('report',this)"><span class="mob-icon">📝</span>回報</button>
+  <button class="mob-btn" onclick="switchPage('overview',this)"><span class="mob-icon">⚡</span>總覽</button>
+  <button class="mob-btn" onclick="switchPage('manage',this)"><span class="mob-icon">📋</span>任務</button>
+  <button class="mob-btn" onclick="switchPage('stats',this)"><span class="mob-icon">📈</span>準時率</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  設定：部署後把你的 Apps Script 網址貼這裡
+// ══════════════════════════════════════════
+const API_URL = 'https://script.google.com/macros/s/AKfycbxasth4ch9ANFp8zk-tgjeFwp_Ze-KBen2adV_UIDcRdST7Ubw-MtysLAAXD5zDaVOw/exec';
+
+let reports = [], todos = [], myName = '', currentFilter = 'all';
+let isLoading = false;
+
+// ── API 呼叫 ──
+async function apiFetch(action, body = null) {
+  try {
+    if (body) {
+      // POST
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action, ...body }),
+        headers: { 'Content-Type': 'text/plain' }
+      });
+      return await res.json();
+    } else {
+      // GET
+      const res = await fetch(`${API_URL}?action=${action}`);
+      return await res.json();
+    }
+  } catch(err) {
+    console.error('API error:', err);
+    return { success: false, error: err.toString() };
+  }
+}
+
+// ── 初始載入資料 ──
+async function loadAllData() {
+  if (API_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return; // 尚未設定 API
+
+  setLoadingState(true);
+  try {
+    const [repRes, todRes] = await Promise.all([
+      apiFetch('getReports'),
+      apiFetch('getTodos')
+    ]);
+    if (repRes.success) reports = repRes.data;
+    if (todRes.success) todos   = todRes.data.map(t => ({ ...t, id: t.id.toString() }));
+    renderReports();
+    renderAllTodos();
+    updateMetrics();
+    if (myName) renderMyTodos();
+  } catch(e) {
+    console.error(e);
+  }
+  setLoadingState(false);
+}
+
+function setLoadingState(on) {
+  isLoading = on;
+  const indicator = document.getElementById('loading-indicator');
+  if (indicator) indicator.style.display = on ? 'flex' : 'none';
+}
+
+// ── utils ──
+function today() { return new Date().toISOString().split('T')[0]; }
+function fmt(d) { if(!d) return '–'; const p = d.split('-'); return p[1]+'/'+p[2]; }
+function daysUntil(d) {
+  const n = new Date(); n.setHours(0,0,0,0);
+  return Math.round((new Date(d) - n) / 86400000);
+}
+function addDays(base, n) {
+  const d = new Date(base); d.setDate(d.getDate()+n);
+  return d.toISOString().split('T')[0];
+}
+function teamBadge(t) {
+  const map = { '社群團隊': 'social', '行政團隊': 'admin', '活動團隊': 'event' };
+  return `<span class="badge badge-${map[t]||'ok'}">${t}</span>`;
+}
+function statusBadge(d) {
+  if(d < 0)  return `<span class="badge badge-danger">逾期 ${Math.abs(d)}天</span>`;
+  if(d <= 3) return `<span class="badge badge-warn">剩 ${d} 天</span>`;
+  return `<span class="badge badge-ok">剩 ${d} 天</span>`;
+}
+function itemCls(d) { return d < 0 ? 'late' : d <= 3 ? 'warn' : 'ok'; }
+function dotCls(d)  { return d < 0 ? 'dot-danger' : d <= 3 ? 'dot-warn' : 'dot-ok'; }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+function updateMetrics() {
+  document.getElementById('m-reports').textContent = reports.filter(r => r.date === today()).length;
+  document.getElementById('m-todos').textContent = todos.filter(t => !t.done).length;
+  const done = todos.filter(t => t.done);
+  const ontime = done.filter(t => t.completedDate <= t.deadline);
+  document.getElementById('m-ontime').textContent = done.length ? Math.round(ontime.length/done.length*100)+'%' : '–';
+}
+
+// ── header ──
+const now = new Date();
+document.getElementById('header-date').textContent =
+  now.toLocaleDateString('zh-TW', {year:'numeric', month:'2-digit', day:'2-digit', weekday:'short'});
+
+// ── nav ──
+function switchPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn, .mob-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-btn, .mob-btn').forEach(b => {
+    if(b.getAttribute('onclick') === `switchPage('${id}',this)`) b.classList.add('active');
+  });
+  if(id === 'overview') renderOverview();
+  if(id === 'stats') renderStats();
+  if(id === 'manage') renderAllTodos();
+}
+
+// ── my todos ──
+function loadMyTodos() {
+  const n = document.getElementById('my-name-input').value.trim();
+  if(!n) { showToast('請輸入你的姓名'); return; }
+  myName = n;
+  document.getElementById('name-gate').style.display = 'none';
+  document.getElementById('my-todos-area').style.display = 'block';
+  document.getElementById('my-name-title').textContent = n;
+  renderMyTodos();
+}
+function resetMyName() {
+  myName = '';
+  document.getElementById('my-name-input').value = '';
+  document.getElementById('name-gate').style.display = 'block';
+  document.getElementById('my-todos-area').style.display = 'none';
+}
+function renderMyTodos() {
+  const active = todos.filter(t => !t.done && t.owner === myName).sort((a,b) => a.deadline.localeCompare(b.deadline));
+  const done   = todos.filter(t =>  t.done && t.owner === myName).sort((a,b) => b.completedDate.localeCompare(a.completedDate));
+  const lateN  = active.filter(t => daysUntil(t.deadline) < 0).length;
+  const warnN  = active.filter(t => { const d=daysUntil(t.deadline); return d>=0&&d<=3; }).length;
+  const okN    = active.filter(t => daysUntil(t.deadline) > 3).length;
+  const lc = document.getElementById('my-chip-late');
+  const wc = document.getElementById('my-chip-warn');
+  const oc = document.getElementById('my-chip-ok');
+  lc.style.display = lateN ? '' : 'none'; lc.textContent = `逾期 ${lateN}`;
+  wc.style.display = warnN ? '' : 'none'; wc.textContent = `快到期 ${warnN}`;
+  oc.style.display = okN   ? '' : 'none'; oc.textContent = `進行中 ${okN}`;
+
+  const el = document.getElementById('my-todo-list');
+  if(!active.length) {
+    el.innerHTML = done.length
+      ? '<div class="empty"><span class="empty-icon">🏆</span>所有任務都完成了！</div>'
+      : '<div class="empty"><span class="empty-icon">🎯</span>目前沒有待辦任務</div>';
+  } else {
+    el.innerHTML = active.map(t => {
+      const d = daysUntil(t.deadline);
+      return `<div class="todo-item ${itemCls(d)}">
+        <span class="dot ${dotCls(d)}"></span>
+        <div class="todo-item-content">
+          <div class="todo-item-title">${t.title}</div>
+          <div class="todo-item-meta">${teamBadge(t.team)} &nbsp; 截止 ${t.deadline}</div>
+        </div>
+        ${statusBadge(d)}
+        <button class="btn btn-sm btn-primary" onclick="completeTodo(${t.id})">完成 ✓</button>
+      </div>`;
+    }).join('');
+  }
+
+  const ds = document.getElementById('my-done-section');
+  const dl = document.getElementById('my-done-list');
+  if(done.length) {
+    ds.style.display = 'block';
+    document.getElementById('my-done-count').textContent = `(${done.length})`;
+    dl.innerHTML = done.map(t => `
+      <div class="todo-item todo-item-dimmed" style="border-left-color:var(--black5)">
+        <span class="dot dot-neutral"></span>
+        <div class="todo-item-content">
+          <div class="todo-item-title">${t.title}</div>
+          <div class="todo-item-meta">完成於 ${t.completedDate} &nbsp; ${t.completedDate <= t.deadline ? '<span style="color:var(--green)">準時</span>' : '<span style="color:var(--red)">逾期</span>'}</div>
+        </div>
+      </div>`).join('');
+  } else { ds.style.display = 'none'; }
+}
+function toggleDoneList() {
+  const dl = document.getElementById('my-done-list');
+  const arr = document.getElementById('done-arrow');
+  const vis = dl.style.display !== 'none';
+  dl.style.display = vis ? 'none' : 'block';
+  arr.textContent = vis ? '▸' : '▾';
+}
+async function completeTodo(id) {
+  const t = todos.find(x => x.id.toString() === id.toString());
+  if(t) { t.done = true; t.completedDate = today(); }
+  if(myName) renderMyTodos();
+  renderAllTodos();
+  updateMetrics();
+  showToast('任務完成 ✓');
+
+  if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+    const res = await apiFetch('completeTodo', { id: id.toString() });
+    if (!res.success) showToast('⚠ 同步失敗，請重新整理');
+  }
+}
+
+// ── report ──
+async function submitReport() {
+  const name  = document.getElementById('r-name').value.trim();
+  const team  = document.getElementById('r-team').value;
+  const done  = document.getElementById('r-done').value.trim();
+  const plan  = document.getElementById('r-plan').value.trim();
+  const block = document.getElementById('r-block').value.trim();
+  if(!name||!team||!done) { showToast('請填寫姓名、團隊和今日完成事項'); return; }
+
+  const entry = { id: Date.now().toString(), name, team, done, plan, block, date: today() };
+  reports.unshift(entry);
+  ['r-name','r-done','r-plan','r-block'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('r-team').value = '';
+  renderReports(); updateMetrics();
+  showToast('回報已提交 ✓');
+
+  if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+    const res = await apiFetch('addReport', { name, team, done, plan, block });
+    if (!res.success) showToast('⚠ 同步失敗，請重新整理');
+  }
+}
+function renderReports() {
+  const el = document.getElementById('report-history');
+  if(!reports.length) { el.innerHTML = '<div class="empty"><span class="empty-icon">📭</span>尚無回報記錄</div>'; return; }
+  el.innerHTML = reports.map(r => `
+    <div class="report-item">
+      <div class="report-header">
+        <span class="report-name">${r.name}</span>
+        ${teamBadge(r.team)}
+        ${r.block && r.block !== '無' ? '<span class="badge badge-warn">需支援</span>' : ''}
+        <span class="report-date">${r.date}</span>
+      </div>
+      <div class="report-row"><span class="report-key">完成</span><span>${r.done}</span></div>
+      ${r.plan  ? `<div class="report-row"><span class="report-key">明日</span><span>${r.plan}</span></div>` : ''}
+      ${r.block && r.block !== '無' ? `<div class="report-row report-block"><span class="report-key">問題</span><span>${r.block}</span></div>` : ''}
+    </div>`).join('');
+}
+
+// ── todos ──
+async function addTodo() {
+  const title    = document.getElementById('t-title').value.trim();
+  const owner    = document.getElementById('t-owner').value.trim();
+  const team     = document.getElementById('t-team').value;
+  const deadline = document.getElementById('t-deadline').value;
+  if(!title||!owner||!team||!deadline) { showToast('請填寫所有欄位'); return; }
+
+  const entry = { id: Date.now().toString(), title, owner, team, deadline, done: false, completedDate: null };
+  todos.push(entry);
+  ['t-title','t-owner','t-deadline'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('t-team').value = '';
+  renderAllTodos(); updateMetrics();
+  if(myName) renderMyTodos();
+  showToast('任務已新增 +');
+
+  if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+    const res = await apiFetch('addTodo', { title, owner, team, deadline });
+    if (!res.success) showToast('⚠ 同步失敗，請重新整理');
+  }
+}
+async function deleteTodo(id) {
+  todos = todos.filter(x => x.id.toString() !== id.toString());
+  renderAllTodos(); updateMetrics();
+  if(myName) renderMyTodos();
+  showToast('任務已刪除');
+
+  if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+    const res = await apiFetch('deleteTodo', { id: id.toString() });
+    if (!res.success) showToast('⚠ 同步失敗，請重新整理');
+  }
+}
+function filterTodos(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAllTodos();
+}
+function renderAllTodos() {
+  const el = document.getElementById('all-todo-list');
+  let list = todos.filter(t => !t.done);
+  if(currentFilter !== 'all') list = list.filter(t => t.team === currentFilter);
+  list.sort((a,b) => a.deadline.localeCompare(b.deadline));
+  if(!list.length) { el.innerHTML = '<div class="empty"><span class="empty-icon">✨</span>無待辦任務</div>'; return; }
+  el.innerHTML = `<table>
+    <thead><tr><th>任務</th><th>負責人</th><th>團隊</th><th>截止日</th><th>狀態</th><th></th></tr></thead>
+    <tbody>${list.map(t => {
+      const d = daysUntil(t.deadline);
+      return `<tr>
+        <td><span class="dot ${dotCls(d)}" style="margin-right:8px;vertical-align:middle"></span>${t.title}</td>
+        <td style="color:var(--gray1)">${t.owner}</td>
+        <td>${teamBadge(t.team)}</td>
+        <td style="font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:0.04em;color:var(--gray1)">${t.deadline}</td>
+        <td>${statusBadge(d)}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-sm btn-primary" onclick="completeTodo(${t.id})" style="margin-right:4px">完成</button>
+          <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteTodo(${t.id})">✕</button>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+// ── overview ──
+function renderOverview() {
+  const todayStr = today();
+  const todayReps = reports.filter(r => r.date === todayStr);
+  const repEl = document.getElementById('overview-reports');
+  repEl.innerHTML = todayReps.length
+    ? todayReps.map(r => `
+      <div class="overview-report-item">
+        <span class="overview-report-name">${r.name}</span>
+        ${teamBadge(r.team)}
+        <span class="overview-report-text">${r.done.substring(0,50)}${r.done.length>50?'…':''}</span>
+        ${r.block && r.block !== '無' ? '<span class="badge badge-warn">需支援</span>' : '<span class="badge badge-ok">已回報</span>'}
+      </div>`).join('')
+    : '<div class="empty"><span class="empty-icon">⏳</span>今日尚無回報</div>';
+
+  const urgent = todos.filter(t => !t.done && daysUntil(t.deadline) <= 3)
+    .sort((a,b) => daysUntil(a.deadline) - daysUntil(b.deadline));
+  const urgEl = document.getElementById('overview-urgent');
+  urgEl.innerHTML = urgent.length
+    ? urgent.map(t => {
+        const d = daysUntil(t.deadline);
+        return `<div class="urgent-item">
+          <span class="dot ${dotCls(d)}"></span>
+          <span class="urgent-title">${t.title}</span>
+          <span class="urgent-owner">${t.owner}</span>
+          ${teamBadge(t.team)}
+          ${statusBadge(d)}
+        </div>`;
+      }).join('')
+    : '<div class="empty"><span class="empty-icon">✅</span>目前無即將到期任務</div>';
+  updateMetrics();
+}
+
+// ── stats ──
+function renderStats() {
+  const teams = ['社群團隊','行政團隊','活動團隊'];
+  const colors = { '社群團隊': '#FFE500', '行政團隊': '#4CD8FF', '活動團隊': '#FF7F00' };
+  const el = document.getElementById('team-stats');
+  el.innerHTML = teams.map(team => {
+    const all    = todos.filter(t => t.team === team);
+    const done   = all.filter(t => t.done);
+    const ontime = done.filter(t => t.completedDate <= t.deadline);
+    const lateN  = all.filter(t => t.done ? t.completedDate > t.deadline : daysUntil(t.deadline) < 0).length;
+    const rate   = done.length ? Math.round(ontime.length/done.length*100) : null;
+    const color  = rate === null ? '#555550' : rate >= 80 ? '#22CE00' : rate >= 60 ? '#FF7F00' : '#FF1926';
+    const teamColor = colors[team];
+    return `<div class="team-stat">
+      <div class="team-stat-header">
+        <span class="badge badge-${team==='社群團隊'?'social':team==='行政團隊'?'admin':'event'}">${team}</span>
+        <span class="team-stat-info">共 ${all.length} 項 · 完成 ${done.length} 項 · 逾期 ${lateN} 項</span>
+        <span class="team-stat-rate" style="color:${color}">${rate !== null ? rate+'%' : '–'}</span>
+      </div>
+      <div class="progress">
+        <div class="progress-fill" style="width:${rate||0}%;background:${color}"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('s-total').textContent = todos.length;
+  document.getElementById('s-done').textContent  = todos.filter(t => t.done).length;
+  document.getElementById('s-late').textContent  = todos.filter(t => t.done ? t.completedDate > t.deadline : daysUntil(t.deadline) < 0).length;
+
+  const doneItems = todos.filter(t => t.done).sort((a,b) => b.completedDate.localeCompare(a.completedDate));
+  const doneEl = document.getElementById('done-records');
+  doneEl.innerHTML = doneItems.length
+    ? `<table><thead><tr><th>任務</th><th>負責人</th><th>截止日</th><th>完成日</th><th>狀態</th></tr></thead><tbody>` +
+      doneItems.map(t => `<tr>
+        <td>${t.title}</td>
+        <td style="color:var(--gray1)">${t.owner}</td>
+        <td style="font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:0.04em;color:var(--gray1)">${fmt(t.deadline)}</td>
+        <td style="font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:0.04em;color:var(--gray1)">${fmt(t.completedDate)}</td>
+        <td>${t.completedDate <= t.deadline ? '<span class="badge badge-ok">準時</span>' : '<span class="badge badge-danger">逾期</span>'}</td>
+      </tr>`).join('') + '</tbody></table>'
+    : '<div class="empty"><span class="empty-icon">📋</span>尚無已完成任務</div>';
+}
+
+// ── 啟動：從 Google Sheet 載入資料 ──
+loadAllData();
+renderReports();
+renderAllTodos();
+updateMetrics();
+</script>
+</body>
+</html>
