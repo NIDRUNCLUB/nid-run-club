@@ -820,7 +820,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <textarea class="form-textarea" id="r-block" placeholder="如無問題請填「無」" style="min-height:56px"></textarea>
         </div>
         <div style="display:flex;justify-content:flex-end">
-          <button class="btn btn-primary" onclick="submitReport()">提交回報 →</button>
+          <button class="btn btn-primary" id="r-submit-btn" onclick="submitReport()">提交回報 →</button>
         </div>
       </div>
       <div class="card">
@@ -892,7 +892,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           </div>
         </div>
         <div style="display:flex;justify-content:flex-end">
-          <button class="btn btn-primary" onclick="addTodo()">新增任務 +</button>
+          <button class="btn btn-primary" id="t-submit-btn" onclick="addTodo()">新增任務 +</button>
         </div>
       </div>
       <div class="card">
@@ -1177,16 +1177,35 @@ async function submitReport() {
   const block = document.getElementById('r-block').value.trim();
   if(!name||!team||!done) { showToast('請填寫姓名、團隊和今日完成事項'); return; }
 
-  const entry = { id: Date.now().toString(), name, team, done, plan, block, date: today() };
-  reports.unshift(entry);
-  ['r-name','r-done','r-plan','r-block'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('r-team').value = '';
-  renderReports(); updateMetrics();
-  showToast('回報已提交 ✓');
+  const btn = document.getElementById('r-submit-btn');
+  const editId = btn.getAttribute('data-edit-id');
 
-  if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-    const res = await apiFetch('addReport', { name, team, done, plan, block });
-    if (!res.success) showToast('⚠ 同步失敗，請重新整理');
+  if (editId) {
+    // 編輯模式：更新本地資料
+    const r = reports.find(x => x.id === editId);
+    if (r) { r.name = name; r.team = team; r.done = done; r.plan = plan; r.block = block; }
+    btn.textContent = '提交回報 →';
+    btn.removeAttribute('data-edit-id');
+    ['r-name','r-done','r-plan','r-block'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('r-team').value = '';
+    renderReports(); updateMetrics();
+    showToast('回報已更新 ✓');
+    if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+      const res = await apiFetch('editReport', { id: editId, name, team, done, plan, block });
+      if (!res.success) showToast('⚠ 同步失敗，請重新整理');
+    }
+  } else {
+    // 新增模式
+    const entry = { id: Date.now().toString(), name, team, done, plan, block, date: today() };
+    reports.unshift(entry);
+    ['r-name','r-done','r-plan','r-block'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('r-team').value = '';
+    renderReports(); updateMetrics();
+    showToast('回報已提交 ✓');
+    if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+      const res = await apiFetch('addReport', { name, team, done, plan, block });
+      if (!res.success) showToast('⚠ 同步失敗，請重新整理');
+    }
   }
 }
 function renderReports() {
@@ -1198,12 +1217,29 @@ function renderReports() {
         <span class="report-name">${r.name}</span>
         ${teamBadge(r.team)}
         ${r.block && r.block !== '無' ? '<span class="badge badge-warn">需支援</span>' : ''}
-        <span class="report-date">${r.date}</span>
+        <span class="report-date" style="margin-left:auto">${r.date}</span>
+        <button class="btn btn-ghost btn-sm" onclick="editReport('${r.id}')" style="color:var(--gray1);margin-left:8px">編輯</button>
       </div>
       <div class="report-row"><span class="report-key">完成</span><span>${r.done}</span></div>
       ${r.plan  ? `<div class="report-row"><span class="report-key">明日</span><span>${r.plan}</span></div>` : ''}
       ${r.block && r.block !== '無' ? `<div class="report-row report-block"><span class="report-key">問題</span><span>${r.block}</span></div>` : ''}
     </div>`).join('');
+}
+
+function editReport(id) {
+  const r = reports.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('r-name').value  = r.name;
+  document.getElementById('r-team').value  = r.team;
+  document.getElementById('r-done').value  = r.done;
+  document.getElementById('r-plan').value  = r.plan || '';
+  document.getElementById('r-block').value = r.block || '';
+  // Mark as editing
+  document.getElementById('r-submit-btn').textContent = '更新回報 →';
+  document.getElementById('r-submit-btn').setAttribute('data-edit-id', id);
+  // Scroll to form
+  document.getElementById('r-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  showToast('請修改後按「更新回報」');
 }
 
 // ── todos ──
@@ -1214,19 +1250,53 @@ async function addTodo() {
   const deadline = document.getElementById('t-deadline').value;
   if(!title||!owner||!team||!deadline) { showToast('請填寫所有欄位'); return; }
 
-  const entry = { id: Date.now().toString(), title, owner, team, deadline, done: false, completedDate: null };
-  todos.push(entry);
-  ['t-title','t-owner','t-deadline'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('t-team').value = '';
-  renderAllTodos(); updateMetrics();
-  if(myName) renderMyTodos();
-  showToast('任務已新增 +');
+  const btn = document.getElementById('t-submit-btn');
+  const editId = btn.getAttribute('data-edit-id');
 
-  if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-    const res = await apiFetch('addTodo', { title, owner, team, deadline });
-    if (!res.success) showToast('⚠ 同步失敗，請重新整理');
+  if (editId) {
+    // 編輯模式
+    const t = todos.find(x => x.id.toString() === editId.toString());
+    if (t) { t.title = title; t.owner = owner; t.team = team; t.deadline = deadline; }
+    btn.textContent = '新增任務 +';
+    btn.removeAttribute('data-edit-id');
+    ['t-title','t-owner','t-deadline'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('t-team').value = '';
+    renderAllTodos(); updateMetrics();
+    if(myName) renderMyTodos();
+    showToast('任務已更新 ✓');
+    if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+      const res = await apiFetch('editTodo', { id: editId, title, owner, team, deadline });
+      if (!res.success) showToast('⚠ 同步失敗，請重新整理');
+    }
+  } else {
+    // 新增模式
+    const entry = { id: Date.now().toString(), title, owner, team, deadline, done: false, completedDate: null };
+    todos.push(entry);
+    ['t-title','t-owner','t-deadline'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('t-team').value = '';
+    renderAllTodos(); updateMetrics();
+    if(myName) renderMyTodos();
+    showToast('任務已新增 +');
+    if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+      const res = await apiFetch('addTodo', { title, owner, team, deadline });
+      if (!res.success) showToast('⚠ 同步失敗，請重新整理');
+    }
   }
 }
+function editTodo(id) {
+  const t = todos.find(x => x.id.toString() === id.toString());
+  if (!t) return;
+  document.getElementById('t-title').value    = t.title;
+  document.getElementById('t-owner').value    = t.owner;
+  document.getElementById('t-team').value     = t.team;
+  document.getElementById('t-deadline').value = t.deadline;
+  const btn = document.getElementById('t-submit-btn');
+  btn.textContent = '更新任務 →';
+  btn.setAttribute('data-edit-id', id);
+  document.getElementById('t-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  showToast('請修改後按「更新任務」');
+}
+
 async function deleteTodo(id) {
   todos = todos.filter(x => x.id.toString() !== id.toString());
   renderAllTodos(); updateMetrics();
@@ -1262,6 +1332,7 @@ function renderAllTodos() {
         <td>${statusBadge(d)}</td>
         <td style="white-space:nowrap">
           <button class="btn btn-sm btn-primary" onclick="completeTodo(${t.id})" style="margin-right:4px">完成</button>
+          <button class="btn btn-sm btn-ghost" onclick="editTodo(${t.id})" style="margin-right:4px;color:var(--gray1)">編輯</button>
           <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteTodo(${t.id})">✕</button>
         </td>
       </tr>`;
