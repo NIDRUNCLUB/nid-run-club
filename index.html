@@ -993,7 +993,7 @@ async function loadAllData() {
       apiFetch('getReports'),
       apiFetch('getTodos')
     ]);
-    if (repRes.success) reports = repRes.data.map(r => ({ ...r, date: normalizeDate(r.date) }));
+    if (repRes.success) reports = repRes.data.map((r, i) => ({ ...r, id: r.id ? r.id.toString() : 'r'+i, date: normalizeDate(r.date) }));
     if (todRes.success) todos = todRes.data.map(t => ({ ...t, id: t.id.toString(), deadline: normalizeDate(t.deadline), completedDate: t.completedDate ? normalizeDate(t.completedDate) : null }));
     renderReports();
     renderAllTodos();
@@ -1227,8 +1227,8 @@ function renderReports() {
 }
 
 function editReport(id) {
-  const r = reports.find(x => x.id === id);
-  if (!r) return;
+  const r = reports.find(x => x.id === id || x.id === id.toString());
+  if (!r) { showToast('找不到此回報'); return; }
   document.getElementById('r-name').value  = r.name;
   document.getElementById('r-team').value  = r.team;
   document.getElementById('r-done').value  = r.done;
