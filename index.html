@@ -993,8 +993,8 @@ async function loadAllData() {
       apiFetch('getReports'),
       apiFetch('getTodos')
     ]);
-    if (repRes.success) reports = repRes.data;
-    if (todRes.success) todos   = todRes.data.map(t => ({ ...t, id: t.id.toString() }));
+    if (repRes.success) reports = repRes.data.map(r => ({ ...r, date: normalizeDate(r.date) }));
+    if (todRes.success) todos = todRes.data.map(t => ({ ...t, id: t.id.toString(), deadline: normalizeDate(t.deadline), completedDate: t.completedDate ? normalizeDate(t.completedDate) : null }));
     renderReports();
     renderAllTodos();
     updateMetrics();
@@ -1012,7 +1012,25 @@ function setLoadingState(on) {
 }
 
 // ── utils ──
-function today() { return new Date().toISOString().split('T')[0]; }
+function today() {
+  const d = new Date();
+  const taipei = new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+  return taipei.getFullYear() + '-' +
+    String(taipei.getMonth()+1).padStart(2,'0') + '-' +
+    String(taipei.getDate()).padStart(2,'0');
+}
+function normalizeDate(d) {
+  if (!d) return '';
+  const str = String(d);
+  // already yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.substring(0, 10);
+  const parsed = new Date(str);
+  if (isNaN(parsed)) return str.substring(0, 10);
+  const taipei = new Date(parsed.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+  return taipei.getFullYear() + '-' +
+    String(taipei.getMonth()+1).padStart(2,'0') + '-' +
+    String(taipei.getDate()).padStart(2,'0');
+}
 function fmt(d) { if(!d) return '–'; const p = d.split('-'); return p[1]+'/'+p[2]; }
 function daysUntil(d) {
   const n = new Date(); n.setHours(0,0,0,0);
