@@ -28,6 +28,7 @@
   --social-c: #FFE500;
   --admin-c:  #4CD8FF;
   --event-c:  #FF7F00;
+  --coach-c:  #22CE00;
 
   --radius:    8px;
   --radius-sm: 4px;
@@ -306,6 +307,7 @@ body {
 .badge-social { background: rgba(255,229,0,0.12); color: var(--yellow); }
 .badge-admin  { background: rgba(76,216,255,0.12); color: var(--admin-c); }
 .badge-event  { background: rgba(255,127,0,0.12); color: var(--event-c); }
+.badge-coach  { background: rgba(34,206,0,0.12);  color: var(--coach-c); }
 
 /* ── FORMS ── */
 .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -743,6 +745,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <span class="badge badge-social" style="justify-content:center">社群團隊</span>
         <span class="badge badge-admin" style="justify-content:center">行政團隊</span>
         <span class="badge badge-event" style="justify-content:center">活動團隊</span>
+        <span class="badge badge-coach" style="justify-content:center">教練團隊</span>
       </div>
     </div>
   </nav>
@@ -804,6 +807,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
               <option>社群團隊</option>
               <option>行政團隊</option>
               <option>活動團隊</option>
+              <option>教練團隊</option>
             </select>
           </div>
         </div>
@@ -902,6 +906,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <button class="filter-btn" onclick="filterTodos('社群團隊',this)">社群</button>
           <button class="filter-btn" onclick="filterTodos('行政團隊',this)">行政</button>
           <button class="filter-btn" onclick="filterTodos('活動團隊',this)">活動</button>
+          <button class="filter-btn" onclick="filterTodos('教練團隊',this)">教練</button>
         </div>
         <div id="all-todo-list"></div>
       </div>
@@ -1031,16 +1036,26 @@ function normalizeDate(d) {
   return str.substring(0, 10);
 }
 function fmt(d) { if(!d) return '–'; const p = d.split('-'); return p[1]+'/'+p[2]; }
+function parseLocalDate(str) {
+  // Parse yyyy-mm-dd as LOCAL date, not UTC, to avoid timezone shift
+  const [y, m, d] = String(str).split('-').map(Number);
+  return new Date(y, m-1, d);
+}
 function daysUntil(d) {
-  const n = new Date(); n.setHours(0,0,0,0);
-  return Math.round((new Date(d) - n) / 86400000);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = parseLocalDate(d);
+  return Math.round((target - today) / 86400000);
 }
 function addDays(base, n) {
-  const d = new Date(base); d.setDate(d.getDate()+n);
-  return d.toISOString().split('T')[0];
+  const d = parseLocalDate(base);
+  d.setDate(d.getDate()+n);
+  return d.getFullYear() + '-' +
+    String(d.getMonth()+1).padStart(2,'0') + '-' +
+    String(d.getDate()).padStart(2,'0');
 }
 function teamBadge(t) {
-  const map = { '社群團隊': 'social', '行政團隊': 'admin', '活動團隊': 'event' };
+  const map = { '社群團隊': 'social', '行政團隊': 'admin', '活動團隊': 'event', '教練團隊': 'coach' };
   return `<span class="badge badge-${map[t]||'ok'}">${t}</span>`;
 }
 function statusBadge(d) {
@@ -1374,8 +1389,8 @@ function renderOverview() {
 
 // ── stats ──
 function renderStats() {
-  const teams = ['社群團隊','行政團隊','活動團隊'];
-  const colors = { '社群團隊': '#FFE500', '行政團隊': '#4CD8FF', '活動團隊': '#FF7F00' };
+  const teams = ['社群團隊','行政團隊','活動團隊','教練團隊'];
+  const colors = { '社群團隊': '#FFE500', '行政團隊': '#4CD8FF', '活動團隊': '#FF7F00', '教練團隊': '#22CE00' };
   const el = document.getElementById('team-stats');
   el.innerHTML = teams.map(team => {
     const all    = todos.filter(t => t.team === team);
@@ -1387,7 +1402,7 @@ function renderStats() {
     const teamColor = colors[team];
     return `<div class="team-stat">
       <div class="team-stat-header">
-        <span class="badge badge-${team==='社群團隊'?'social':team==='行政團隊'?'admin':'event'}">${team}</span>
+        <span class="badge badge-${team==='社群團隊'?'social':team==='行政團隊'?'admin':team==='活動團隊'?'event':'coach'}">${team}</span>
         <span class="team-stat-info">共 ${all.length} 項 · 完成 ${done.length} 項 · 逾期 ${lateN} 項</span>
         <span class="team-stat-rate" style="color:${color}">${rate !== null ? rate+'%' : '–'}</span>
       </div>
