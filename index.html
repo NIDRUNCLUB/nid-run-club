@@ -1022,16 +1022,13 @@ function today() {
 function normalizeDate(d) {
   if (!d) return '';
   const str = String(d).trim();
-  // Already yyyy-mm-dd — return as-is, Apps Script already handles timezone
-  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-  // Has time component — extract date part only
-  if (/^\d{4}-\d{2}-\d{2}T/.test(str)) return str.substring(0, 10);
-  // Other formats — try parsing carefully
-  const parsed = new Date(str.replace(/-/g, '/'));
-  if (isNaN(parsed)) return str.substring(0, 10);
-  return parsed.getFullYear() + '-' +
-    String(parsed.getMonth()+1).padStart(2,'0') + '-' +
-    String(parsed.getDate()).padStart(2,'0');
+  // Extract yyyy-mm-dd from any format — never re-parse to avoid timezone shift
+  const match = str.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (match) return match[1] + '-' + match[2] + '-' + match[3];
+  // Slash format e.g. 2026/04/26
+  const match2 = str.match(/(\d{4})\/(\d{2})\/(\d{2})/);
+  if (match2) return match2[1] + '-' + match2[2] + '-' + match2[3];
+  return str.substring(0, 10);
 }
 function fmt(d) { if(!d) return '–'; const p = d.split('-'); return p[1]+'/'+p[2]; }
 function daysUntil(d) {
