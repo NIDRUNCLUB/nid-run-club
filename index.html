@@ -721,7 +721,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div class="sidebar-section">
       <div class="sidebar-label">成員</div>
       <button class="nav-btn active" onclick="switchPage('mytodos',this)">
-        <span class="nav-icon">✅</span> 我的待辦
+        <span class="nav-icon">👤</span> 我的頁面
       </button>
       <button class="nav-btn" onclick="switchPage('report',this)">
         <span class="nav-icon">📝</span> 每日回報
@@ -756,13 +756,13 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <!-- ░░ 我的待辦 ░░ -->
     <div id="page-mytodos" class="page active">
       <div class="page-header">
-        <div class="page-title">我的<span> 待辦</span></div>
-        <div class="page-subtitle">輸入你的名字，查看屬於你的所有任務</div>
+        <div class="page-title">我的<span> 頁面</span></div>
+        <div class="page-subtitle">輸入你的名字，查看你的待辦任務和回報紀錄</div>
       </div>
 
       <div class="name-gate" id="name-gate">
         <div class="name-gate-title">你是誰？</div>
-        <div class="name-gate-sub">輸入姓名後即可看到你的個人待辦清單</div>
+        <div class="name-gate-sub">輸入姓名後即可看到你的待辦任務與回報紀錄</div>
         <div class="name-gate-row">
           <input class="form-input" type="text" id="my-name-input" placeholder="輸入你的姓名" onkeydown="if(event.key==='Enter')loadMyTodos()">
           <button class="btn btn-primary" onclick="loadMyTodos()">確認 →</button>
@@ -783,6 +783,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             <span id="done-arrow">▸</span> 已完成任務 <span id="my-done-count" style="color:var(--gray2)"></span>
           </div>
           <div id="my-done-list" style="display:none"></div>
+        </div>
+
+        <!-- 我的回報紀錄 -->
+        <div style="margin-top:28px">
+          <div class="card-title" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray1);margin-bottom:16px;display:flex;align-items:center;gap:10px">我的回報紀錄 <span style="flex:1;height:1px;background:var(--black5);display:block"></span></div>
+          <div id="my-report-list"><div class="empty"><span class="empty-icon">📭</span>尚無回報紀錄</div></div>
         </div>
       </div>
     </div>
@@ -948,7 +954,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 <!-- MOBILE NAV -->
 <nav class="mobile-nav">
-  <button class="mob-btn active" onclick="switchPage('mytodos',this)"><span class="mob-icon">✅</span>待辦</button>
+  <button class="mob-btn active" onclick="switchPage('mytodos',this)"><span class="mob-icon">👤</span>我的</button>
   <button class="mob-btn" onclick="switchPage('report',this)"><span class="mob-icon">📝</span>回報</button>
   <button class="mob-btn" onclick="switchPage('overview',this)"><span class="mob-icon">⚡</span>總覽</button>
   <button class="mob-btn" onclick="switchPage('manage',this)"><span class="mob-icon">📋</span>任務</button>
@@ -1003,7 +1009,7 @@ async function loadAllData() {
     renderReports();
     renderAllTodos();
     updateMetrics();
-    if (myName) renderMyTodos();
+    if (myName) { renderMyTodos(); renderMyReports(); }
   } catch(e) {
     console.error(e);
   }
@@ -1072,7 +1078,12 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 function updateMetrics() {
-  document.getElementById('m-reports').textContent = reports.filter(r => r.date === today()).length;
+  const todayStr = today();
+  const todayCount = reports.filter(r => {
+    const d = normalizeDate(r.date);
+    return d === todayStr;
+  }).length;
+  document.getElementById('m-reports').textContent = todayCount;
   document.getElementById('m-todos').textContent = todos.filter(t => !t.done).length;
   const done = todos.filter(t => t.done);
   const ontime = done.filter(t => t.completedDate <= t.deadline);
@@ -1106,6 +1117,7 @@ function loadMyTodos() {
   document.getElementById('my-todos-area').style.display = 'block';
   document.getElementById('my-name-title').textContent = n;
   renderMyTodos();
+  renderMyReports();
 }
 function resetMyName() {
   myName = '';
@@ -1161,6 +1173,28 @@ function renderMyTodos() {
       </div>`).join('');
   } else { ds.style.display = 'none'; }
 }
+function renderMyReports() {
+  const el = document.getElementById('my-report-list');
+  if (!el) return;
+  const myReps = reports.filter(r => r.name === myName).sort((a,b) => normalizeDate(b.date).localeCompare(normalizeDate(a.date)));
+  if (!myReps.length) {
+    el.innerHTML = '<div class="empty"><span class="empty-icon">📭</span>尚無回報紀錄</div>';
+    return;
+  }
+  el.innerHTML = myReps.map(r => `
+    <div class="report-item">
+      <div class="report-header">
+        <span class="report-date" style="color:var(--gray1);font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:0.06em">${normalizeDate(r.date)}</span>
+        ${teamBadge(r.team)}
+        ${r.block && r.block !== '無' ? '<span class="badge badge-warn">需支援</span>' : ''}
+        <button class="btn btn-ghost btn-sm" onclick="editReport('${r.id}')" style="color:var(--gray1);margin-left:auto">編輯</button>
+      </div>
+      <div class="report-row"><span class="report-key">完成</span><span>${r.done}</span></div>
+      ${r.plan ? `<div class="report-row"><span class="report-key">明日</span><span>${r.plan}</span></div>` : ''}
+      ${r.block && r.block !== '無' ? `<div class="report-row report-block"><span class="report-key">問題</span><span>${r.block}</span></div>` : ''}
+    </div>`).join('');
+}
+
 function toggleDoneList() {
   const dl = document.getElementById('my-done-list');
   const arr = document.getElementById('done-arrow');
@@ -1357,7 +1391,7 @@ function renderAllTodos() {
 // ── overview ──
 function renderOverview() {
   const todayStr = today();
-  const todayReps = reports.filter(r => r.date === todayStr);
+  const todayReps = reports.filter(r => normalizeDate(r.date) === todayStr);
   const repEl = document.getElementById('overview-reports');
   repEl.innerHTML = todayReps.length
     ? todayReps.map(r => `
