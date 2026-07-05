@@ -823,6 +823,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <span id="my-chip-ok"   class="my-stat-chip badge-ok" style="display:none"></span>
           <button class="btn btn-ghost btn-sm" onclick="resetMyName()" style="margin-left:8px">切換</button>
         </div>
+
+        <!-- 本週會議討論事項 -->
+        <div class="card" id="my-meeting-card" style="display:none;border-color:rgba(255,229,0,0.25)">
+          <div class="card-title">📌 週二會議討論事項 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">主管預計與你的團隊討論的內容，先看過準備一下</span></div>
+          <div id="my-meeting-list"></div>
+        </div>
         <!-- 填寫今日回報 -->
         <div class="card">
           <div class="card-title">填寫今日回報</div>
@@ -1165,7 +1171,7 @@ async function loadAllData() {
     renderReports();
     renderAllTodos();
     updateMetrics();
-    if (myName) { renderMyTodos(); renderMyReports(); }
+    if (myName) { renderMyTodos(); renderMyReports(); renderMyMeetings(); }
   } catch(e) {
     console.error(e);
   }
@@ -1312,6 +1318,7 @@ function loadMyTodos() {
 
   renderMyTodos();
   renderMyReports();
+  renderMyMeetings();
   renderReportTasks();
 }
 function resetMyName() {
@@ -1375,6 +1382,33 @@ function renderMyTodos() {
       </div>`).join('');
   } else { ds.style.display = 'none'; }
 }
+function renderMyMeetings() {
+  const card = document.getElementById('my-meeting-card');
+  const el = document.getElementById('my-meeting-list');
+  if (!card || !el) return;
+  if (!myTeam) { card.style.display = 'none'; return; }
+  const tracking = meetings.filter(m => m.team === myTeam && m.status === '追蹤中');
+  const pending  = meetings.filter(m => m.team === myTeam && m.status === '待討論');
+  if (!tracking.length && !pending.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  let out = '';
+  out += tracking.map(m => `
+    <div class="todo-item warn" style="padding:10px 14px">
+      <div class="todo-item-content">
+        <div class="todo-item-title" style="font-size:13px"><span class="badge badge-warn" style="margin-right:6px">🔁 持續追蹤</span>${m.content}</div>
+        <div class="todo-item-meta">記於 ${m.date}</div>
+      </div>
+    </div>`).join('');
+  out += pending.map(m => `
+    <div class="todo-item" style="border-left-color:var(--black5);padding:10px 14px">
+      <div class="todo-item-content">
+        <div class="todo-item-title" style="font-size:13px">${m.content}</div>
+        <div class="todo-item-meta">記於 ${m.date}</div>
+      </div>
+    </div>`).join('');
+  el.innerHTML = out;
+}
+
 function renderMyReports() {
   const el = document.getElementById('my-report-list');
   if (!el) return;
