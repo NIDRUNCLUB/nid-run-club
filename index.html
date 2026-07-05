@@ -578,6 +578,59 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .progress-fill { height: 100%; border-radius: 3px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
 
 /* ── DOT ── */
+.roster-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.roster-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--black5);
+  background: var(--black4);
+  font-size: 13px;
+}
+.roster-chip .roster-name { font-weight: 500; color: var(--white); }
+.roster-chip.reported { border-color: rgba(34,206,0,0.4); }
+.roster-chip.missing { border-color: rgba(255,25,38,0.4); }
+.roster-chip.missing .roster-name { color: var(--gray1); }
+.roster-mark { font-size: 14px; line-height: 1; }
+.roster-team-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray2);
+  width: 100%;
+  margin-top: 10px;
+  margin-bottom: 2px;
+}
+.roster-team-label:first-child { margin-top: 0; }
+.report-todo-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--black5);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.report-todo-item:hover { border-color: var(--gray2); }
+.report-todo-item input[type=checkbox] {
+  width: 18px; height: 18px;
+  accent-color: var(--yellow);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.report-todo-item .rt-title { flex: 1; font-size: 13px; color: var(--white); }
+.report-todo-item .rt-deadline {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--gray1);
+}
 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 .dot-ok     { background: var(--green); }
 .dot-warn   { background: var(--orange); }
@@ -723,20 +776,11 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <button class="nav-btn active" onclick="switchPage('mytodos',this)">
         <span class="nav-icon">👤</span> 我的頁面
       </button>
-      <button class="nav-btn" onclick="switchPage('report',this)">
-        <span class="nav-icon">📝</span> 每日回報
-      </button>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-label">後台管理</div>
-      <button class="nav-btn" onclick="switchPage('overview',this)">
-        <span class="nav-icon">⚡</span> 總覽
-      </button>
-      <button class="nav-btn" onclick="switchPage('manage',this)">
-        <span class="nav-icon">📋</span> 任務管理
-      </button>
-      <button class="nav-btn" onclick="switchPage('stats',this)">
-        <span class="nav-icon">📈</span> 準時率
+      <div class="sidebar-label">管理者</div>
+      <button class="nav-btn" onclick="switchPage('admin',this)">
+        <span class="nav-icon">🔒</span> 管理後台
       </button>
     </div>
     <div class="sidebar-section">
@@ -745,7 +789,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <span class="badge badge-social" style="justify-content:center">社群團隊</span>
         <span class="badge badge-admin" style="justify-content:center">行政團隊</span>
         <span class="badge badge-event" style="justify-content:center">活動團隊</span>
-        <span class="badge badge-coach" style="justify-content:center">教練團隊</span>
       </div>
     </div>
   </nav>
@@ -764,7 +807,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <div class="name-gate-title">你是誰？</div>
         <div class="name-gate-sub">輸入姓名後即可看到你的待辦任務與回報紀錄</div>
         <div class="name-gate-row">
-          <input class="form-input" type="text" id="my-name-input" placeholder="輸入你的姓名" onkeydown="if(event.key==='Enter')loadMyTodos()">
+          <select class="form-select" id="my-name-select" style="display:none;flex:1">
+            <option value="">選擇你的名字</option>
+          </select>
+          <input class="form-input" type="text" id="my-name-input" placeholder="輸入你的姓名" onkeydown="if(event.key==='Enter')loadMyTodos()" style="flex:1">
           <button class="btn btn-primary" onclick="loadMyTodos()">確認 →</button>
         </div>
       </div>
@@ -777,6 +823,65 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <span id="my-chip-ok"   class="my-stat-chip badge-ok" style="display:none"></span>
           <button class="btn btn-ghost btn-sm" onclick="resetMyName()" style="margin-left:8px">切換</button>
         </div>
+        <!-- 填寫今日回報 -->
+        <div class="card">
+          <div class="card-title">填寫今日回報</div>
+          <div class="form-grid-2" id="r-identity" style="display:none">
+            <div class="form-group">
+              <label class="form-label">你的姓名</label>
+              <input class="form-input" type="text" id="r-name" placeholder="輸入姓名">
+            </div>
+            <div class="form-group">
+              <label class="form-label">所屬團隊</label>
+              <select class="form-select" id="r-team">
+                <option value="">請選擇</option>
+                <option>社群團隊</option>
+                <option>行政團隊</option>
+                <option>活動團隊</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" id="r-mytasks-wrap" style="display:none">
+            <label class="form-label">你的進行中任務（做完的直接勾，提交時自動標記完成）</label>
+            <div id="r-mytasks"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">今日完成事項</label>
+            <textarea class="form-textarea" id="r-done" placeholder="例：完成 IG 貼文排程、回覆客戶訊息 10 則…"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">明日計畫</label>
+            <textarea class="form-textarea" id="r-plan" placeholder="例：製作活動素材、確認場地報價…" style="min-height:64px"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">問題 / 需要支援</label>
+            <textarea class="form-textarea" id="r-block" placeholder="如無問題請填「無」" style="min-height:56px"></textarea>
+          </div>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" id="r-submit-btn" onclick="submitReport()">提交回報 →</button>
+          </div>
+        </div>
+
+        <!-- 快速新增任務 -->
+        <div class="card">
+          <div class="card-title">新增自己的任務</div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">任務名稱</label>
+              <input class="form-input" type="text" id="qt-title" placeholder="輸入任務內容">
+            </div>
+            <div class="form-group">
+              <label class="form-label">截止日期</label>
+              <input class="form-input" type="date" id="qt-deadline">
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" onclick="addMyTodo()">新增任務 +</button>
+          </div>
+        </div>
+
+        <!-- 我的待辦 -->
+        <div class="card-title" style="margin-top:24px">我的待辦</div>
         <div id="my-todo-list"></div>
         <div id="my-done-section" class="todo-done-section" style="display:none">
           <div class="todo-done-toggle" onclick="toggleDoneList()">
@@ -793,159 +898,153 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       </div>
     </div>
 
-    <!-- ░░ 每日回報 ░░ -->
-    <div id="page-report" class="page">
+    <!-- ░░ 管理後台 ░░ -->
+    <div id="page-admin" class="page">
       <div class="page-header">
-        <div class="page-title">每日<span> 回報</span></div>
-        <div class="page-subtitle">每天下班前填寫，讓主管掌握你的進度</div>
+        <div class="page-title">管理<span> 後台</span></div>
+        <div class="page-subtitle">回報勾稽、任務指派、會議清單與準時率</div>
       </div>
-      <div class="card">
-        <div class="card-title">填寫今日回報</div>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label class="form-label">你的姓名</label>
-            <input class="form-input" type="text" id="r-name" placeholder="輸入姓名">
-          </div>
-          <div class="form-group">
-            <label class="form-label">所屬團隊</label>
-            <select class="form-select" id="r-team">
-              <option value="">請選擇</option>
-              <option>社群團隊</option>
-              <option>行政團隊</option>
-              <option>活動團隊</option>
-              <option>教練團隊</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">今日完成事項</label>
-          <textarea class="form-textarea" id="r-done" placeholder="例：完成 IG 貼文排程、回覆客戶訊息 10 則…"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">明日計畫</label>
-          <textarea class="form-textarea" id="r-plan" placeholder="例：製作活動素材、確認場地報價…" style="min-height:64px"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">問題 / 需要支援</label>
-          <textarea class="form-textarea" id="r-block" placeholder="如無問題請填「無」" style="min-height:56px"></textarea>
-        </div>
-        <div style="display:flex;justify-content:flex-end">
-          <button class="btn btn-primary" id="r-submit-btn" onclick="submitReport()">提交回報 →</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">歷史回報</div>
-        <div id="report-history"><div class="empty"><span class="empty-icon">📭</span>尚無回報記錄</div></div>
-      </div>
-    </div>
 
-    <!-- ░░ 總覽 ░░ -->
-    <div id="page-overview" class="page">
-      <div class="page-header">
-        <div class="page-title">後台<span> 總覽</span></div>
-        <div class="page-subtitle">今日回報狀況與即將到期任務</div>
-      </div>
-      <div class="runner-line"></div>
-      <div class="metrics-grid">
-        <div class="metric-card yellow">
-          <div class="metric-label">今日回報</div>
-          <div class="metric-value" id="m-reports">0</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-label">進行中任務</div>
-          <div class="metric-value" id="m-todos">0</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-label">整體準時率</div>
-          <div class="metric-value" id="m-ontime">–</div>
+      <!-- 密碼閘門 -->
+      <div class="name-gate" id="admin-gate">
+        <div class="name-gate-title">管理者驗證</div>
+        <div class="name-gate-sub">此區域僅限管理者使用，請輸入密碼</div>
+        <div class="name-gate-row">
+          <input class="form-input" type="password" id="admin-pass" placeholder="輸入密碼" onkeydown="if(event.key==='Enter')unlockAdmin()" style="flex:1">
+          <button class="btn btn-primary" onclick="unlockAdmin()">解鎖 →</button>
         </div>
       </div>
-      <div class="card">
-        <div class="card-title">今日回報狀況</div>
-        <div id="overview-reports"><div class="empty"><span class="empty-icon">⏳</span>今日尚無回報</div></div>
-      </div>
-      <div class="card">
-        <div class="card-title">即將到期任務（3天內）</div>
-        <div id="overview-urgent"><div class="empty"><span class="empty-icon">✅</span>目前無即將到期任務</div></div>
-      </div>
-    </div>
 
-    <!-- ░░ 任務管理 ░░ -->
-    <div id="page-manage" class="page">
-      <div class="page-header">
-        <div class="page-title">任務<span> 管理</span></div>
-        <div class="page-subtitle">指派任務並追蹤截止日</div>
-      </div>
-      <div class="card">
-        <div class="card-title">新增任務</div>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label class="form-label">任務名稱</label>
-            <input class="form-input" type="text" id="t-title" placeholder="輸入任務內容">
-          </div>
-          <div class="form-group">
-            <label class="form-label">負責人</label>
-            <input class="form-input" type="text" id="t-owner" placeholder="員工姓名">
-          </div>
-          <div class="form-group">
-            <label class="form-label">所屬團隊</label>
-            <select class="form-select" id="t-team">
-              <option value="">請選擇</option>
-              <option>社群團隊</option>
-              <option>行政團隊</option>
-              <option>活動團隊</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">截止日期</label>
-            <input class="form-input" type="date" id="t-deadline">
-          </div>
-        </div>
-        <div style="display:flex;justify-content:flex-end">
-          <button class="btn btn-primary" id="t-submit-btn" onclick="addTodo()">新增任務 +</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">全員待辦</div>
-        <div class="filter-row">
-          <button class="filter-btn active" onclick="filterTodos('all',this)">全部</button>
-          <button class="filter-btn" onclick="filterTodos('社群團隊',this)">社群</button>
-          <button class="filter-btn" onclick="filterTodos('行政團隊',this)">行政</button>
-          <button class="filter-btn" onclick="filterTodos('活動團隊',this)">活動</button>
-          <button class="filter-btn" onclick="filterTodos('教練團隊',this)">教練</button>
-        </div>
-        <div id="all-todo-list"></div>
-      </div>
-    </div>
+      <div id="admin-area" style="display:none">
+        <div class="runner-line"></div>
 
-    <!-- ░░ 準時率 ░░ -->
-    <div id="page-stats" class="page">
-      <div class="page-header">
-        <div class="page-title">準時率<span> 統計</span></div>
-        <div class="page-subtitle">各團隊任務完成與逾期分析</div>
-      </div>
-      <div class="runner-line"></div>
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-label">總任務數</div>
-          <div class="metric-value" id="s-total">0</div>
+        <!-- 分頁列 -->
+        <div class="filter-row" style="margin-bottom:20px">
+          <button class="filter-btn active" onclick="switchAdminTab('overview',this)">📊 總覽</button>
+          <button class="filter-btn" onclick="switchAdminTab('meetings',this)">📝 會議</button>
+          <button class="filter-btn" onclick="switchAdminTab('tasks',this)">📋 任務</button>
+          <button class="filter-btn" onclick="switchAdminTab('stats',this)">📈 統計</button>
         </div>
-        <div class="metric-card yellow">
-          <div class="metric-label">已完成</div>
-          <div class="metric-value" id="s-done">0</div>
+
+        <!-- ── 分頁：總覽 ── -->
+        <div id="admin-tab-overview" class="admin-tab">
+        <div class="metrics-grid">
+          <div class="metric-card yellow">
+            <div class="metric-label">今日回報</div>
+            <div class="metric-value" id="m-reports">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">進行中任務</div>
+            <div class="metric-value" id="m-todos">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">整體準時率</div>
+            <div class="metric-value" id="m-ontime">–</div>
+          </div>
         </div>
-        <div class="metric-card red">
-          <div class="metric-label">逾期</div>
-          <div class="metric-value" id="s-late">0</div>
+
+        <div class="card">
+          <div class="card-title">今日回報勾稽</div>
+          <div id="overview-roster"><div class="empty" style="padding:20px"><span class="empty-icon">👥</span>尚未設定員工名單<br><span style="font-size:12px;color:var(--gray2)">請在 Google Sheet 的「員工名單」工作表填入姓名與團隊</span></div></div>
         </div>
-      </div>
-      <div class="card">
-        <div class="card-title">各團隊準時率</div>
-        <div id="team-stats"></div>
-      </div>
-      <div class="card">
-        <div class="card-title">完成記錄</div>
-        <div id="done-records"><div class="empty"><span class="empty-icon">📋</span>尚無已完成任務</div></div>
+
+        <div class="card">
+          <div class="card-title">今日回報狀況</div>
+          <div id="overview-reports"><div class="empty"><span class="empty-icon">⏳</span>今日尚無回報</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">即將到期任務（3天內）</div>
+          <div id="overview-urgent"><div class="empty"><span class="empty-icon">✅</span>目前無即將到期任務</div></div>
+        </div>
+        </div>
+
+        <!-- ── 分頁：會議 ── -->
+        <div id="admin-tab-meetings" class="admin-tab" style="display:none">
+        <div class="card">
+          <div class="card-title">週會議清單 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">會議項目可在 Google Sheet「會議設定」工作表自行新增</span></div>
+          <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+            <select class="form-select" id="mt-team" style="max-width:220px"></select>
+            <input class="form-input" type="text" id="mt-content" placeholder="想到什麼要開會討論的，先記下來…" style="flex:1;min-width:200px" onkeydown="if(event.key==='Enter')addMeeting()">
+            <button class="btn btn-primary" onclick="addMeeting()">記下 +</button>
+          </div>
+          <div id="meeting-lists"></div>
+        </div>
+
+        </div>
+
+        <!-- ── 分頁：任務 ── -->
+        <div id="admin-tab-tasks" class="admin-tab" style="display:none">
+        <div class="card">
+          <div class="card-title">指派任務</div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">任務名稱</label>
+              <input class="form-input" type="text" id="t-title" placeholder="輸入任務內容">
+            </div>
+            <div class="form-group">
+              <label class="form-label">負責人</label>
+              <input class="form-input" type="text" id="t-owner" placeholder="員工姓名">
+            </div>
+            <div class="form-group">
+              <label class="form-label">所屬團隊</label>
+              <select class="form-select" id="t-team">
+                <option value="">請選擇</option>
+                <option>社群團隊</option>
+                <option>行政團隊</option>
+                <option>活動團隊</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">截止日期</label>
+              <input class="form-input" type="date" id="t-deadline">
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" id="t-submit-btn" onclick="addTodo()">新增任務 +</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">全員待辦</div>
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="filterTodos('all',this)">全部</button>
+            <button class="filter-btn" onclick="filterTodos('社群團隊',this)">社群</button>
+            <button class="filter-btn" onclick="filterTodos('行政團隊',this)">行政</button>
+            <button class="filter-btn" onclick="filterTodos('活動團隊',this)">活動</button>
+          </div>
+          <div id="all-todo-list"></div>
+        </div>
+
+        </div>
+
+        <!-- ── 分頁：統計 ── -->
+        <div id="admin-tab-stats" class="admin-tab" style="display:none">
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">總任務數</div>
+            <div class="metric-value" id="s-total">0</div>
+          </div>
+          <div class="metric-card yellow">
+            <div class="metric-label">已完成</div>
+            <div class="metric-value" id="s-done">0</div>
+          </div>
+          <div class="metric-card red">
+            <div class="metric-label">逾期</div>
+            <div class="metric-value" id="s-late">0</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">各團隊準時率</div>
+          <div id="team-stats"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">完成記錄</div>
+          <div id="done-records"><div class="empty"><span class="empty-icon">📋</span>尚無已完成任務</div></div>
+        </div>
+        </div>
       </div>
     </div>
 
@@ -955,10 +1054,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <!-- MOBILE NAV -->
 <nav class="mobile-nav">
   <button class="mob-btn active" onclick="switchPage('mytodos',this)"><span class="mob-icon">👤</span>我的</button>
-  <button class="mob-btn" onclick="switchPage('report',this)"><span class="mob-icon">📝</span>回報</button>
-  <button class="mob-btn" onclick="switchPage('overview',this)"><span class="mob-icon">⚡</span>總覽</button>
-  <button class="mob-btn" onclick="switchPage('manage',this)"><span class="mob-icon">📋</span>任務</button>
-  <button class="mob-btn" onclick="switchPage('stats',this)"><span class="mob-icon">📈</span>準時率</button>
+  <button class="mob-btn" onclick="switchPage('admin',this)"><span class="mob-icon">🔒</span>管理</button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -969,7 +1065,46 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 // ══════════════════════════════════════════
 const API_URL = 'https://script.google.com/macros/s/AKfycbxasth4ch9ANFp8zk-tgjeFwp_Ze-KBen2adV_UIDcRdST7Ubw-MtysLAAXD5zDaVOw/exec';
 
-let reports = [], todos = [], myName = '', currentFilter = 'all';
+let reports = [], todos = [], members = [], meetings = [], myName = '', myTeam = '', currentFilter = 'all';
+let adminUnlocked = false;
+const ADMIN_PASS = 'nid2026'; // ← 管理密碼，可自行修改
+const DEFAULT_MEETINGS = [
+  { key: '行政團隊',            leads: '竺均、小粘' },
+  { key: '活動團隊',            leads: '阿丞' },
+  { key: '社群團隊',            leads: '佩珊' },
+  { key: '高雄團隊會議',         leads: '' },
+  { key: '凱為例行會議',         leads: '' },
+  { key: 'NID Base+例行會議',    leads: '' },
+  { key: 'NID For Kids例行會議', leads: '' },
+  { key: 'NID Base+小編會議',    leads: '' }
+];
+let meetingConfigs = [];
+const TEAM_KEYS = ['行政團隊','活動團隊','社群團隊'];
+function getMeetingsConfig() {
+  const src = meetingConfigs.length ? meetingConfigs : DEFAULT_MEETINGS;
+  return src.map(c => ({
+    key: c.key,
+    label: TEAM_KEYS.includes(c.key) ? c.key + '會議' : c.key,
+    leads: c.leads || '',
+    isTeam: TEAM_KEYS.includes(c.key)
+  }));
+}
+function populateMeetingSelect() {
+  const sel = document.getElementById('mt-team');
+  if (!sel) return;
+  sel.innerHTML = getMeetingsConfig().map(c =>
+    `<option value="${c.key}">${c.label}${c.leads ? '（' + c.leads + '）' : ''}</option>`
+  ).join('');
+}
+function switchAdminTab(name, btn) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.style.display = 'none');
+  const target = document.getElementById('admin-tab-' + name);
+  if (target) target.style.display = 'block';
+  if (btn) {
+    btn.parentElement.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+}
 let isLoading = false;
 
 // ── API 呼叫 ──
@@ -1000,12 +1135,21 @@ async function loadAllData() {
 
   setLoadingState(true);
   try {
-    const [repRes, todRes] = await Promise.all([
+    const [repRes, todRes, memRes, mtRes, cfgRes] = await Promise.all([
       apiFetch('getReports'),
-      apiFetch('getTodos')
+      apiFetch('getTodos'),
+      apiFetch('getMembers'),
+      apiFetch('getMeetings'),
+      apiFetch('getMeetingConfigs')
     ]);
     if (repRes.success) reports = repRes.data.map((r, i) => ({ ...r, id: r.id ? r.id.toString() : 'r'+i, date: normalizeDate(r.date) }));
-    if (todRes.success) todos = todRes.data.map(t => ({ ...t, id: t.id.toString(), deadline: normalizeDate(t.deadline), completedDate: t.completedDate ? normalizeDate(t.completedDate) : null }));
+    if (todRes.success) todos = todRes.data.map(t => ({ ...t, id: t.id.toString(), deadline: normalizeDate(t.deadline), completedDate: t.completedDate ? normalizeDate(t.completedDate) : null, source: t.source || '' }));
+    if (memRes && memRes.success) members = memRes.data || [];
+    if (mtRes && mtRes.success) meetings = (mtRes.data || []).map(m => ({ ...m, id: m.id.toString(), date: normalizeDate(m.date) }));
+    if (cfgRes && cfgRes.success) meetingConfigs = cfgRes.data || [];
+    populateNameSelect();
+    populateMeetingSelect();
+    if (adminUnlocked) renderMeetings();
     renderReports();
     renderAllTodos();
     updateMetrics();
@@ -1103,25 +1247,71 @@ function switchPage(id, btn) {
   document.querySelectorAll('.nav-btn, .mob-btn').forEach(b => {
     if(b.getAttribute('onclick') === `switchPage('${id}',this)`) b.classList.add('active');
   });
-  if(id === 'overview') renderOverview();
-  if(id === 'stats') renderStats();
-  if(id === 'manage') renderAllTodos();
+  if(id === 'admin' && adminUnlocked) {
+    renderOverview();
+    renderStats();
+    renderAllTodos();
+    renderMeetings();
+  }
 }
 
 // ── my todos ──
+function populateNameSelect() {
+  const sel = document.getElementById('my-name-select');
+  const txt = document.getElementById('my-name-input');
+  if (!sel || !txt) return;
+  if (members.length) {
+    sel.innerHTML = '<option value="">選擇你的名字</option>' +
+      members.map(m => `<option value="${m.name}">${m.name}（${m.team || '未分組'}）</option>`).join('');
+    sel.style.display = '';
+    txt.style.display = 'none';
+  } else {
+    sel.style.display = 'none';
+    txt.style.display = '';
+  }
+}
+
 function loadMyTodos() {
-  const n = document.getElementById('my-name-input').value.trim();
-  if(!n) { showToast('請輸入你的姓名'); return; }
+  const sel = document.getElementById('my-name-select');
+  const txt = document.getElementById('my-name-input');
+  let n = '';
+  if (members.length && sel && sel.style.display !== 'none') {
+    n = sel.value;
+    if (!n) { showToast('請選擇你的名字'); return; }
+  } else {
+    n = txt.value.trim();
+    if (!n) { showToast('請輸入你的姓名'); return; }
+  }
   myName = n;
+  const member = members.find(m => m.name === n);
+  myTeam = member ? member.team : '';
+
   document.getElementById('name-gate').style.display = 'none';
   document.getElementById('my-todos-area').style.display = 'block';
   document.getElementById('my-name-title').textContent = n;
+
+  // 自動帶入回報表單
+  const rName = document.getElementById('r-name');
+  const rTeam = document.getElementById('r-team');
+  const rIdentity = document.getElementById('r-identity');
+  if (rName) rName.value = n;
+  if (rTeam && myTeam) rTeam.value = myTeam;
+  if (rIdentity) rIdentity.style.display = myTeam ? 'none' : 'grid';
+
   renderMyTodos();
   renderMyReports();
+  renderReportTasks();
 }
 function resetMyName() {
   myName = '';
+  myTeam = '';
   document.getElementById('my-name-input').value = '';
+  const sel = document.getElementById('my-name-select');
+  if (sel) sel.value = '';
+  const rName = document.getElementById('r-name');
+  const rTeam = document.getElementById('r-team');
+  if (rName) rName.value = '';
+  if (rTeam) rTeam.value = '';
   document.getElementById('name-gate').style.display = 'block';
   document.getElementById('my-todos-area').style.display = 'none';
 }
@@ -1217,6 +1407,27 @@ async function completeTodo(id) {
 }
 
 // ── report ──
+function renderReportTasks() {
+  const nameEl = document.getElementById('r-name');
+  const wrap = document.getElementById('r-mytasks-wrap');
+  const box = document.getElementById('r-mytasks');
+  if (!wrap || !box) return;
+  const n = myName || (nameEl ? nameEl.value.trim() : '');
+  if (!n) { wrap.style.display = 'none'; return; }
+  const mine = todos.filter(t => !t.done && t.owner === n).sort((a,b) => a.deadline.localeCompare(b.deadline));
+  if (!mine.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  box.innerHTML = mine.map(t => {
+    const d = daysUntil(t.deadline);
+    return `<label class="report-todo-item">
+      <input type="checkbox" value="${t.id}" class="r-task-check">
+      <span class="rt-title">${t.title}</span>
+      <span class="rt-deadline">${t.deadline}</span>
+      ${statusBadge(d)}
+    </label>`;
+  }).join('');
+}
+
 async function submitReport() {
   const name  = document.getElementById('r-name').value.trim();
   const team  = document.getElementById('r-team').value;
@@ -1258,6 +1469,7 @@ async function submitReport() {
 }
 function renderReports() {
   const el = document.getElementById('report-history');
+  if (!el) return;
   if(!reports.length) { el.innerHTML = '<div class="empty"><span class="empty-icon">📭</span>尚無回報記錄</div>'; return; }
   el.innerHTML = reports.map(r => `
     <div class="report-item">
@@ -1286,11 +1498,31 @@ function editReport(id) {
   document.getElementById('r-submit-btn').textContent = '更新回報 →';
   document.getElementById('r-submit-btn').setAttribute('data-edit-id', id);
   // Scroll to form
-  document.getElementById('r-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  document.getElementById('r-done').scrollIntoView({ behavior: 'smooth', block: 'center' });
   showToast('請修改後按「更新回報」');
 }
 
 // ── todos ──
+async function addMyTodo() {
+  const title    = document.getElementById('qt-title').value.trim();
+  const deadline = document.getElementById('qt-deadline').value;
+  if (!myName) { showToast('請先選擇你的名字'); return; }
+  if (!title || !deadline) { showToast('請填寫任務名稱和截止日期'); return; }
+  const team = myTeam || (document.getElementById('r-team') ? document.getElementById('r-team').value : '');
+  const entry = { id: Date.now().toString(), title, owner: myName, team, deadline, done: false, completedDate: null, source: '自己' };
+  todos.push(entry);
+  document.getElementById('qt-title').value = '';
+  document.getElementById('qt-deadline').value = '';
+  renderMyTodos();
+  renderReportTasks();
+  updateMetrics();
+  showToast('任務已新增 +');
+  if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+    const res = await apiFetch('addTodo', { title, owner: myName, team, deadline, source: '自己' });
+    if (!res.success) showToast('⚠ 同步失敗，請重新整理');
+  }
+}
+
 async function addTodo() {
   const title    = document.getElementById('t-title').value.trim();
   const owner    = document.getElementById('t-owner').value.trim();
@@ -1318,7 +1550,7 @@ async function addTodo() {
     }
   } else {
     // 新增模式
-    const entry = { id: Date.now().toString(), title, owner, team, deadline, done: false, completedDate: null };
+    const entry = { id: Date.now().toString(), title, owner, team, deadline, done: false, completedDate: null, source: '指派' };
     todos.push(entry);
     ['t-title','t-owner','t-deadline'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('t-team').value = '';
@@ -1326,7 +1558,7 @@ async function addTodo() {
     if(myName) renderMyTodos();
     showToast('任務已新增 +');
     if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-      const res = await apiFetch('addTodo', { title, owner, team, deadline });
+      const res = await apiFetch('addTodo', { title, owner, team, deadline, source: '指派' });
       if (!res.success) showToast('⚠ 同步失敗，請重新整理');
     }
   }
@@ -1388,10 +1620,154 @@ function renderAllTodos() {
   </table>`;
 }
 
+// ── 管理後台解鎖 ──
+function unlockAdmin() {
+  const pass = document.getElementById('admin-pass').value;
+  if (pass !== ADMIN_PASS) { showToast('密碼錯誤'); return; }
+  adminUnlocked = true;
+  document.getElementById('admin-gate').style.display = 'none';
+  document.getElementById('admin-area').style.display = 'block';
+  populateMeetingSelect();
+  renderOverview();
+  renderStats();
+  renderAllTodos();
+  renderMeetings();
+}
+
+// ── 會議清單 ──
+async function addMeeting() {
+  const team = document.getElementById('mt-team').value;
+  const content = document.getElementById('mt-content').value.trim();
+  if (!content) { showToast('請輸入內容'); return; }
+  const entry = { id: Date.now().toString(), team, content, status: '待討論', date: today() };
+  meetings.push(entry);
+  document.getElementById('mt-content').value = '';
+  renderMeetings();
+  showToast('已記下 ✓');
+  if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+    const res = await apiFetch('addMeeting', { id: entry.id, team, content });
+    if (!res.success) showToast('⚠ 同步失敗，請重新整理');
+  }
+}
+
+async function setMeetingStatus(id, status) {
+  const m = meetings.find(x => x.id.toString() === id.toString());
+  if (m) m.status = status;
+  renderMeetings();
+  if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+    await apiFetch('setMeetingStatus', { id: id.toString(), status });
+  }
+}
+
+function doneMeeting(id) {
+  setMeetingStatus(id, '已討論');
+  showToast('已標記討論完成 ✓');
+}
+
+function trackMeeting(id) {
+  setMeetingStatus(id, '追蹤中');
+  showToast('已加入追蹤，下次會議會持續顯示 🔁');
+}
+
+function finishTracking(id) {
+  setMeetingStatus(id, '已結束');
+  showToast('追蹤完成 ✓');
+}
+
+async function deleteMeeting(id) {
+  meetings = meetings.filter(x => x.id.toString() !== id.toString());
+  renderMeetings();
+  showToast('已刪除');
+  if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+    await apiFetch('deleteMeeting', { id: id.toString() });
+  }
+}
+
+function renderMeetings() {
+  const el = document.getElementById('meeting-lists');
+  if (!el) return;
+  let out = '';
+  getMeetingsConfig().forEach(cfg => {
+    const tracking = meetings.filter(m => m.team === cfg.key && m.status === '追蹤中');
+    const pending  = meetings.filter(m => m.team === cfg.key && m.status === '待討論');
+    const total = tracking.length + pending.length;
+
+    const headBadge = cfg.isTeam
+      ? teamBadge(cfg.key)
+      : `<span class="badge" style="background:rgba(255,255,255,0.08);color:var(--gray1)">${cfg.label}</span>`;
+    out += `<div class="roster-team-label" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">${headBadge}${cfg.isTeam ? ` <span style="color:var(--gray1);font-weight:400;text-transform:none;letter-spacing:0">${cfg.leads}</span>` : ''} <span style="color:var(--gray2)">${total ? `${total} 項` : ''}${tracking.length ? `（含追蹤 ${tracking.length}）` : ''}</span></div>`;
+
+    if (!total) {
+      out += '<div style="font-size:12px;color:var(--gray2);padding:4px 0 12px">－</div>';
+      return;
+    }
+
+    out += tracking.map(m => `
+      <div class="todo-item warn" style="padding:10px 14px">
+        <div class="todo-item-content">
+          <div class="todo-item-title" style="font-size:13px"><span class="badge badge-warn" style="margin-right:6px">🔁 追蹤中</span>${m.content}</div>
+          <div class="todo-item-meta">記於 ${m.date}</div>
+        </div>
+        <button class="btn btn-sm btn-primary" onclick="finishTracking('${m.id}')">完成 ✓</button>
+        <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteMeeting('${m.id}')">✕</button>
+      </div>`).join('');
+
+    out += pending.map(m => `
+      <div class="todo-item" style="border-left-color:var(--black5);padding:10px 14px">
+        <div class="todo-item-content">
+          <div class="todo-item-title" style="font-size:13px">${m.content}</div>
+          <div class="todo-item-meta">記於 ${m.date}</div>
+        </div>
+        <button class="btn btn-sm" onclick="trackMeeting('${m.id}')">帶追蹤 🔁</button>
+        <button class="btn btn-sm btn-primary" onclick="doneMeeting('${m.id}')">已討論 ✓</button>
+        <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteMeeting('${m.id}')">✕</button>
+      </div>`).join('');
+  });
+  el.innerHTML = out;
+}
+
 // ── overview ──
 function renderOverview() {
   const todayStr = today();
   const todayReps = reports.filter(r => normalizeDate(r.date) === todayStr);
+
+  // 勾稽名單
+  const rosterEl = document.getElementById('overview-roster');
+  if (rosterEl && members.length) {
+    const reportedNames = new Set(todayReps.map(r => r.name));
+    const teams = ['社群團隊','行政團隊','活動團隊'];
+    let out = '';
+    teams.forEach(team => {
+      const teamMembers = members.filter(m => m.team === team);
+      if (!teamMembers.length) return;
+      out += `<div class="roster-team-label">${team}</div><div class="roster-grid">`;
+      out += teamMembers.map(m => {
+        const ok = reportedNames.has(m.name);
+        return `<div class="roster-chip ${ok?'reported':'missing'}">
+          <span class="roster-mark">${ok?'✅':'❌'}</span>
+          <span class="roster-name">${m.name}</span>
+        </div>`;
+      }).join('');
+      out += '</div>';
+    });
+    // 沒對到團隊的成員
+    const others = members.filter(m => !teams.includes(m.team));
+    if (others.length) {
+      out += '<div class="roster-team-label">其他</div><div class="roster-grid">';
+      out += others.map(m => {
+        const ok = reportedNames.has(m.name);
+        return `<div class="roster-chip ${ok?'reported':'missing'}">
+          <span class="roster-mark">${ok?'✅':'❌'}</span>
+          <span class="roster-name">${m.name}</span>
+        </div>`;
+      }).join('');
+      out += '</div>';
+    }
+    const missCount = members.filter(m => !reportedNames.has(m.name)).length;
+    out = `<div style="font-size:13px;color:var(--gray1);margin-bottom:12px">已回報 <span style="color:var(--green);font-weight:700">${members.length - missCount}</span> / ${members.length} 人${missCount ? `，還有 <span style="color:var(--red);font-weight:700">${missCount}</span> 人未回報` : '，全員到齊 🎉'}</div>` + out;
+    rosterEl.innerHTML = out;
+  }
+
   const repEl = document.getElementById('overview-reports');
   repEl.innerHTML = todayReps.length
     ? todayReps.map(r => `
@@ -1423,8 +1799,8 @@ function renderOverview() {
 
 // ── stats ──
 function renderStats() {
-  const teams = ['社群團隊','行政團隊','活動團隊','教練團隊'];
-  const colors = { '社群團隊': '#FFE500', '行政團隊': '#4CD8FF', '活動團隊': '#FF7F00', '教練團隊': '#22CE00' };
+  const teams = ['社群團隊','行政團隊','活動團隊'];
+  const colors = { '社群團隊': '#FFE500', '行政團隊': '#4CD8FF', '活動團隊': '#FF7F00' };
   const el = document.getElementById('team-stats');
   el.innerHTML = teams.map(team => {
     const all    = todos.filter(t => t.team === team);
@@ -1436,7 +1812,7 @@ function renderStats() {
     const teamColor = colors[team];
     return `<div class="team-stat">
       <div class="team-stat-header">
-        <span class="badge badge-${team==='社群團隊'?'social':team==='行政團隊'?'admin':team==='活動團隊'?'event':'coach'}">${team}</span>
+        <span class="badge badge-${team==='社群團隊'?'social':team==='行政團隊'?'admin':'event'}">${team}</span>
         <span class="team-stat-info">共 ${all.length} 項 · 完成 ${done.length} 項 · 逾期 ${lateN} 項</span>
         <span class="team-stat-rate" style="color:${color}">${rate !== null ? rate+'%' : '–'}</span>
       </div>
@@ -1463,6 +1839,15 @@ function renderStats() {
       </tr>`).join('') + '</tbody></table>'
     : '<div class="empty"><span class="empty-icon">📋</span>尚無已完成任務</div>';
 }
+
+// ── 回報表單：輸入名字時顯示自己的任務 ──
+(function() {
+  const nameEl = document.getElementById('r-name');
+  if (nameEl) {
+    nameEl.addEventListener('input', renderReportTasks);
+    nameEl.addEventListener('blur', renderReportTasks);
+  }
+})();
 
 // ── 啟動：從 Google Sheet 載入資料 ──
 loadAllData();
