@@ -810,7 +810,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <select class="form-select" id="my-name-select" style="display:none;flex:1">
             <option value="">選擇你的名字</option>
           </select>
-          <input class="form-input" type="text" id="my-name-input" placeholder="輸入你的姓名" onkeydown="if(event.key==='Enter')loadMyTodos()" style="flex:1">
+          <input class="form-input" type="text" id="my-name-input" placeholder="輸入你的姓名" onkeydown="if(event.key==='Enter' && !event.isComposing && event.keyCode!==229)loadMyTodos()" style="flex:1">
           <button class="btn btn-primary" onclick="loadMyTodos()">確認 →</button>
         </div>
       </div>
@@ -965,10 +965,22 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <div class="card-title">週會議清單 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">會議項目可在 Google Sheet「會議設定」工作表自行新增</span></div>
           <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
             <select class="form-select" id="mt-team" style="max-width:220px"></select>
-            <input class="form-input" type="text" id="mt-content" placeholder="想到什麼要開會討論的，先記下來…" style="flex:1;min-width:200px" onkeydown="if(event.key==='Enter')addMeeting()">
+            <input class="form-input" type="text" id="mt-content" placeholder="想到什麼要開會討論的，先記下來…" style="flex:1;min-width:200px" onkeydown="if(event.key==='Enter' && !event.isComposing && event.keyCode!==229)addMeeting()">
             <button class="btn btn-primary" onclick="addMeeting()">記下 +</button>
           </div>
           <div id="meeting-lists"></div>
+
+          <div class="todo-done-section" style="margin-top:20px">
+            <div class="todo-done-toggle" onclick="toggleMeetingHistory()">
+              <span id="mh-arrow">▸</span> 歷史紀錄 <span id="mh-count" style="color:var(--gray2)"></span>
+            </div>
+            <div id="mh-area" style="display:none">
+              <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+                <select class="form-select" id="mh-filter" style="max-width:220px" onchange="renderMeetingHistory()"></select>
+              </div>
+              <div id="meeting-history-list"></div>
+            </div>
+          </div>
         </div>
 
         </div>
@@ -1145,7 +1157,7 @@ async function loadAllData() {
     if (repRes.success) reports = repRes.data.map((r, i) => ({ ...r, id: r.id ? r.id.toString() : 'r'+i, date: normalizeDate(r.date) }));
     if (todRes.success) todos = todRes.data.map(t => ({ ...t, id: t.id.toString(), deadline: normalizeDate(t.deadline), completedDate: t.completedDate ? normalizeDate(t.completedDate) : null, source: t.source || '' }));
     if (memRes && memRes.success) members = memRes.data || [];
-    if (mtRes && mtRes.success) meetings = (mtRes.data || []).map(m => ({ ...m, id: m.id.toString(), date: normalizeDate(m.date) }));
+    if (mtRes && mtRes.success) meetings = (mtRes.data || []).map(m => ({ ...m, id: m.id.toString(), date: normalizeDate(m.date), doneDate: m.doneDate ? normalizeDate(m.doneDate) : '' }));
     if (cfgRes && cfgRes.success) meetingConfigs = cfgRes.data || [];
     populateNameSelect();
     populateMeetingSelect();
@@ -1652,8 +1664,12 @@ async function addMeeting() {
 
 async function setMeetingStatus(id, status) {
   const m = meetings.find(x => x.id.toString() === id.toString());
-  if (m) m.status = status;
+  if (m) {
+    m.status = status;
+    if (status === '已討論' || status === '已結束') m.doneDate = today();
+  }
   renderMeetings();
+  renderMeetingHistory();
   if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
     await apiFetch('setMeetingStatus', { id: id.toString(), status });
   }
@@ -1724,6 +1740,61 @@ function renderMeetings() {
       </div>`).join('');
   });
   el.innerHTML = out;
+}
+
+function toggleMeetingHistory() {
+  const area = document.getElementById('mh-area');
+  const arrow = document.getElementById('mh-arrow');
+  const vis = area.style.display !== 'none';
+  area.style.display = vis ? 'none' : 'block';
+  arrow.textContent = vis ? '▸' : '▾';
+  if (!vis) {
+    populateHistoryFilter();
+    renderMeetingHistory();
+  }
+}
+
+function populateHistoryFilter() {
+  const sel = document.getElementById('mh-filter');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">全部會議</option>' + getMeetingsConfig().map(c =>
+    `<option value="${c.key}">${c.label}</option>`
+  ).join('');
+  if (current) sel.value = current;
+}
+
+function renderMeetingHistory() {
+  const el = document.getElementById('meeting-history-list');
+  const countEl = document.getElementById('mh-count');
+  if (!el) return;
+  const archived = meetings.filter(m => m.status === '已討論' || m.status === '已結束');
+  if (countEl) countEl.textContent = `(${archived.length})`;
+  const filter = document.getElementById('mh-filter') ? document.getElementById('mh-filter').value : '';
+  let list = filter ? archived.filter(m => m.team === filter) : archived;
+  list = list.slice().sort((a,b) => (b.doneDate || b.date).localeCompare(a.doneDate || a.date));
+  if (!list.length) {
+    el.innerHTML = '<div class="empty" style="padding:16px"><span class="empty-icon">🗂</span>尚無歷史紀錄</div>';
+    return;
+  }
+  const cfgMap = {};
+  getMeetingsConfig().forEach(c => cfgMap[c.key] = c);
+  el.innerHTML = list.map(m => {
+    const cfg = cfgMap[m.team];
+    const badge = cfg && cfg.isTeam
+      ? teamBadge(m.team)
+      : `<span class="badge" style="background:rgba(255,255,255,0.08);color:var(--gray1)">${cfg ? cfg.label : m.team}</span>`;
+    const statusBadgeHtml = m.status === '已討論'
+      ? '<span class="badge badge-ok">已討論</span>'
+      : '<span class="badge badge-ok">追蹤完成</span>';
+    return `<div class="todo-item todo-item-dimmed" style="border-left-color:var(--black5);padding:10px 14px;opacity:0.7">
+      <div class="todo-item-content">
+        <div class="todo-item-title" style="font-size:13px;text-decoration:none">${m.content}</div>
+        <div class="todo-item-meta">${badge} &nbsp; 記於 ${m.date}${m.doneDate ? ' · 完成於 ' + m.doneDate : ''}</div>
+      </div>
+      ${statusBadgeHtml}
+    </div>`;
+  }).join('');
 }
 
 // ── overview ──
