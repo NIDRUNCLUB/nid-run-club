@@ -1164,19 +1164,19 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <!-- 改期視窗 -->
 <div id="rs-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:center;justify-content:center;padding:20px">
   <div class="card" style="max-width:420px;width:100%;margin:0">
-    <div class="card-title">修改截止日期</div>
-    <div style="font-size:14px;color:var(--white);margin-bottom:14px" id="rs-task-title"></div>
+    <div class="card-title">編輯任務</div>
+    <div style="font-size:12px;color:var(--gray2);margin-bottom:14px" id="rs-task-title"></div>
     <div class="form-group">
-      <label class="form-label">新的截止日期</label>
-      <input class="form-input" type="date" id="rs-date">
+      <label class="form-label">任務名稱</label>
+      <input class="form-input" type="text" id="rs-title">
     </div>
     <div class="form-group">
-      <label class="form-label">改期原因（必填）</label>
-      <textarea class="form-textarea" id="rs-reason" placeholder="例：廠商延遲回覆、優先處理其他緊急任務…" style="min-height:64px"></textarea>
+      <label class="form-label">截止日期</label>
+      <input class="form-input" type="date" id="rs-date">
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px">
       <button class="btn" onclick="closeReschedule()">取消</button>
-      <button class="btn btn-primary" onclick="confirmReschedule()">確認改期 →</button>
+      <button class="btn btn-primary" onclick="confirmReschedule()">儲存 →</button>
     </div>
   </div>
 </div>
@@ -1575,7 +1575,7 @@ function renderMyTodos() {
           ${t.reschedule ? `<div class="todo-item-meta" style="color:var(--orange)">📅 ${t.reschedule}</div>` : ''}
         </div>
         ${statusBadge(d)}
-        <button class="btn btn-sm" onclick="openReschedule('${t.id}')">改期 📅</button>
+        <button class="btn btn-sm" onclick="openReschedule('${t.id}')">編輯</button>
         ${myTeam === '行政團隊' ? `<button class="btn btn-sm" onclick="openHandoff('${t.id}')">交接 →</button>` : ''}
         <button class="btn btn-sm btn-primary" onclick="completeTodo('${t.id}')">完成 ✓</button>
       </div>`;
@@ -1721,9 +1721,9 @@ function openReschedule(id) {
   const t = todos.find(x => x.id.toString() === id.toString());
   if (!t) return;
   rescheduleTargetId = id.toString();
-  document.getElementById('rs-task-title').textContent = '「' + t.title + '」目前截止：' + t.deadline;
+  document.getElementById('rs-task-title').textContent = '目前截止：' + t.deadline;
+  document.getElementById('rs-title').value = t.title;
   document.getElementById('rs-date').value = t.deadline;
-  document.getElementById('rs-reason').value = '';
   document.getElementById('rs-overlay').style.display = 'flex';
 }
 
@@ -1733,24 +1733,28 @@ function closeReschedule() {
 }
 
 async function confirmReschedule() {
+  const newTitle = document.getElementById('rs-title').value.trim();
   const newDate = document.getElementById('rs-date').value;
-  const reason = document.getElementById('rs-reason').value.trim();
-  if (!newDate) { showToast('請選擇新的截止日期'); return; }
-  if (!reason) { showToast('請填寫改期原因'); return; }
+  if (!newTitle) { showToast('任務名稱不能空白'); return; }
+  if (!newDate) { showToast('請選擇截止日期'); return; }
   const t = todos.find(x => x.id.toString() === rescheduleTargetId);
   if (!t) { closeReschedule(); return; }
-  if (newDate === t.deadline) { showToast('日期沒有變更'); return; }
-  const who = myName || currentAdmin || '';
-  const note = `${t.deadline} → ${newDate}（${today()} ${who}）：${reason}`;
-  t.reschedule = t.reschedule ? t.reschedule + ' | ' + note : note;
+
+  let note = '';
+  if (newDate !== t.deadline) {
+    const who = myName || currentAdmin || '';
+    note = `${t.deadline} → ${newDate}（${today()} ${who}）`;
+    t.reschedule = t.reschedule ? t.reschedule + ' | ' + note : note;
+  }
+  t.title = newTitle;
   t.deadline = newDate;
   closeReschedule();
   if (myName) { renderMyTodos(); renderMyStats(); renderReportTasks(); }
   renderAllTodos();
   updateMetrics();
-  showToast('已改期 ✓');
+  showToast('已更新 ✓');
   if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-    const res = await apiFetch('rescheduleTodo', { id: t.id.toString(), newDeadline: newDate, note });
+    const res = await apiFetch('rescheduleTodo', { id: t.id.toString(), title: newTitle, newDeadline: newDate, note });
     if (!res.success) showToast('⚠ 同步失敗，請重新整理');
   }
 }
