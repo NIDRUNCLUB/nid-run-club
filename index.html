@@ -1576,7 +1576,6 @@ function renderMyTodos() {
         </div>
         ${statusBadge(d)}
         <button class="btn btn-sm" onclick="openReschedule('${t.id}')">編輯</button>
-        ${myTeam === '行政團隊' ? `<button class="btn btn-sm" onclick="openHandoff('${t.id}')">交接 →</button>` : ''}
         <button class="btn btn-sm btn-primary" onclick="completeTodo('${t.id}')">完成 ✓</button>
       </div>`;
     }).join('');
