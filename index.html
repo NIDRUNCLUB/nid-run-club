@@ -1315,6 +1315,13 @@ function normalizeDate(d) {
   // Slash format e.g. 2026/04/26
   const match2 = str.match(/(\d{4})\/(\d{2})\/(\d{2})/);
   if (match2) return match2[1] + '-' + match2[2] + '-' + match2[3];
+  // 最後防線：長文字格式（如 Mon Jul 06 2026）以本地時間解析
+  const parsed = new Date(str);
+  if (!isNaN(parsed)) {
+    return parsed.getFullYear() + '-' +
+      String(parsed.getMonth()+1).padStart(2,'0') + '-' +
+      String(parsed.getDate()).padStart(2,'0');
+  }
   return str.substring(0, 10);
 }
 function fmt(d) { if(!d) return '–'; const p = d.split('-'); return p[1]+'/'+p[2]; }
@@ -1546,7 +1553,7 @@ function renderMyTodos() {
         </div>
         ${statusBadge(d)}
         <button class="btn btn-sm" onclick="openHandoff('${t.id}')">交接 →</button>
-        <button class="btn btn-sm btn-primary" onclick="completeTodo(${t.id})">完成 ✓</button>
+        <button class="btn btn-sm btn-primary" onclick="completeTodo('${t.id}')">完成 ✓</button>
       </div>`;
     }).join('');
   }
@@ -1843,9 +1850,9 @@ async function submitReport() {
     if (r) { r.name = name; r.team = team; r.done = done; r.plan = plan; r.block = block; }
     btn.textContent = '提交回報 →';
     btn.removeAttribute('data-edit-id');
-    ['r-name','r-done'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('r-team').value = '';
+    document.getElementById('r-done').value = '';
     renderReports(); updateMetrics();
+    if (myName) { renderMyReports(); renderMyStats(); }
     showToast('回報已更新 ✓');
     if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
       const res = await apiFetch('editReport', { id: editId, name, team, done, plan, block });
@@ -2027,9 +2034,9 @@ function renderAllTodos() {
         <td style="font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:0.04em;color:var(--gray1)">${t.deadline}</td>
         <td>${statusBadge(d)}</td>
         <td style="white-space:nowrap">
-          <button class="btn btn-sm btn-primary" onclick="completeTodo(${t.id})" style="margin-right:4px">完成</button>
-          <button class="btn btn-sm btn-ghost" onclick="editTodo(${t.id})" style="margin-right:4px;color:var(--gray1)">編輯</button>
-          <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteTodo(${t.id})">✕</button>
+          <button class="btn btn-sm btn-primary" onclick="completeTodo('${t.id}')" style="margin-right:4px">完成</button>
+          <button class="btn btn-sm btn-ghost" onclick="editTodo('${t.id}')" style="margin-right:4px;color:var(--gray1)">編輯</button>
+          <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteTodo('${t.id}')">✕</button>
         </td>
       </tr>`;
     }).join('')}</tbody>
@@ -2345,7 +2352,9 @@ function populateHistoryFilter() {
   const sel = document.getElementById('mh-filter');
   if (!sel) return;
   const current = sel.value;
-  sel.innerHTML = '<option value="">全部會議</option>' + getMeetingsConfig().map(c =>
+  let cfgs = getMeetingsConfig();
+  if (currentAdmin === 'Jerry') cfgs = cfgs.filter(c => c.key === '凱為例行會議');
+  sel.innerHTML = (currentAdmin === 'Jerry' ? '' : '<option value="">全部會議</option>') + cfgs.map(c =>
     `<option value="${c.key}">${c.label}</option>`
   ).join('');
   if (current) sel.value = current;
@@ -2355,7 +2364,8 @@ function renderMeetingHistory() {
   const el = document.getElementById('meeting-history-list');
   const countEl = document.getElementById('mh-count');
   if (!el) return;
-  const archived = meetings.filter(m => m.status === '已討論' || m.status === '已結束');
+  let archived = meetings.filter(m => m.status === '已討論' || m.status === '已結束');
+  if (currentAdmin === 'Jerry') archived = archived.filter(m => m.team === '凱為例行會議');
   if (countEl) countEl.textContent = `(${archived.length})`;
   const filter = document.getElementById('mh-filter') ? document.getElementById('mh-filter').value : '';
   let list = filter ? archived.filter(m => m.team === filter) : archived;
