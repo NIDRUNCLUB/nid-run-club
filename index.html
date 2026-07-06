@@ -774,7 +774,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div class="sidebar-section">
       <div class="sidebar-label">成員</div>
       <button class="nav-btn active" onclick="switchPage('mytodos',this)">
-        <span class="nav-icon">👤</span> 我的頁面
+        <span class="nav-icon">👤</span> 工作回報及任務
       </button>
     </div>
     <div class="sidebar-section">
@@ -800,18 +800,19 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <!-- ░░ 我的待辦 ░░ -->
     <div id="page-mytodos" class="page active">
       <div class="page-header">
-        <div class="page-title">我的<span> 頁面</span></div>
+        <div class="page-title">工作回報<span> 及任務</span></div>
         <div class="page-subtitle">輸入你的名字，查看你的待辦任務和回報紀錄</div>
       </div>
 
       <div class="name-gate" id="name-gate">
         <div class="name-gate-title">你是誰？</div>
         <div class="name-gate-sub">輸入姓名後即可看到你的待辦任務與回報紀錄</div>
-        <div class="name-gate-row">
-          <select class="form-select" id="my-name-select" style="display:none;flex:1">
-            <option value="">選擇你的名字</option>
+        <div class="name-gate-row" style="max-width:400px">
+          <select class="form-select" id="my-name-select" style="flex:1">
+            <option value="">載入名單中…</option>
           </select>
-          <input class="form-input" type="text" id="my-name-input" placeholder="輸入你的姓名" onkeydown="if(event.key==='Enter' && !event.isComposing && event.keyCode!==229)loadMyTodos()" style="flex:1">
+          <input class="form-input" type="text" id="my-name-input" placeholder="輸入你的姓名" onkeydown="if(event.key==='Enter' && !event.isComposing && event.keyCode!==229)loadMyTodos()" style="display:none;flex:1">
+          <input class="form-input" type="password" id="my-pass" placeholder="密碼" style="max-width:96px" onkeydown="if(event.key==='Enter')loadMyTodos()">
           <button class="btn btn-primary" onclick="loadMyTodos()">確認 →</button>
         </div>
       </div>
@@ -823,6 +824,23 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <span id="my-chip-warn" class="my-stat-chip badge-warn" style="display:none"></span>
           <span id="my-chip-ok"   class="my-stat-chip badge-ok" style="display:none"></span>
           <button class="btn btn-ghost btn-sm" onclick="resetMyName()" style="margin-left:8px">切換</button>
+        </div>
+
+        <!-- 遊戲化統計 -->
+        <div class="metrics-grid">
+          <div class="metric-card yellow">
+            <div class="metric-label">🔥 連續回報</div>
+            <div class="metric-value"><span id="g-streak">0</span><span style="font-size:16px;color:var(--gray1)"> 天</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">📬 本月回報率</div>
+            <div class="metric-value" id="g-month">–</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">🎯 任務準時率</div>
+            <div class="metric-value" id="g-task">–</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.06em;color:var(--yellow);margin-top:4px" id="g-medal"></div>
+          </div>
         </div>
 
         <!-- 本週會議討論事項 -->
@@ -928,9 +946,13 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <!-- 密碼閘門 -->
       <div class="name-gate" id="admin-gate">
         <div class="name-gate-title">管理者驗證</div>
-        <div class="name-gate-sub">此區域僅限管理者使用，請輸入密碼</div>
-        <div class="name-gate-row">
-          <input class="form-input" type="password" id="admin-pass" placeholder="輸入密碼" onkeydown="if(event.key==='Enter')unlockAdmin()" style="flex:1">
+        <div class="name-gate-sub">此區域僅限管理者使用，請選擇身分並輸入密碼</div>
+        <div class="name-gate-row" style="max-width:380px">
+          <select class="form-select" id="admin-user" style="max-width:110px">
+            <option value="Aaron">Aaron</option>
+            <option value="Jerry">Jerry</option>
+          </select>
+          <input class="form-input" type="password" id="admin-pass" placeholder="密碼" onkeydown="if(event.key==='Enter')unlockAdmin()" style="flex:1">
           <button class="btn btn-primary" onclick="unlockAdmin()">解鎖 →</button>
         </div>
       </div>
@@ -939,12 +961,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <div class="runner-line"></div>
 
         <!-- 分頁列 -->
-        <div class="filter-row" style="margin-bottom:20px">
-          <button class="filter-btn active" onclick="switchAdminTab('overview',this)">📊 總覽</button>
-          <button class="filter-btn" onclick="switchAdminTab('meetings',this)">📝 會議</button>
-          <button class="filter-btn" onclick="switchAdminTab('tasks',this)">📋 任務</button>
-          <button class="filter-btn" onclick="switchAdminTab('stats',this)">📈 統計</button>
-          <button class="filter-btn" onclick="switchAdminTab('aaron',this)">🏷 我的</button>
+        <div class="filter-row" style="margin-bottom:20px" id="admin-tab-bar">
+          <button class="filter-btn active" data-tab="overview" onclick="switchAdminTab('overview',this)">📊 總覽</button>
+          <button class="filter-btn" data-tab="meetings" onclick="switchAdminTab('meetings',this)">📝 會議</button>
+          <button class="filter-btn" data-tab="tasks" onclick="switchAdminTab('tasks',this)">📋 任務</button>
+          <button class="filter-btn" data-tab="stats" onclick="switchAdminTab('stats',this)">📈 統計</button>
+          <button class="filter-btn" data-tab="aaron" onclick="switchAdminTab('aaron',this)">🏷 我的</button>
         </div>
 
         <!-- ── 分頁：總覽 ── -->
@@ -1134,7 +1156,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 <!-- MOBILE NAV -->
 <nav class="mobile-nav">
-  <button class="mob-btn active" onclick="switchPage('mytodos',this)"><span class="mob-icon">👤</span>我的</button>
+  <button class="mob-btn active" onclick="switchPage('mytodos',this)"><span class="mob-icon">👤</span>回報任務</button>
   <button class="mob-btn" onclick="switchPage('admin',this)"><span class="mob-icon">🔒</span>管理</button>
 </nav>
 
@@ -1168,8 +1190,9 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbxasth4ch9ANFp8zk-tgjeF
 
 let reports = [], todos = [], members = [], meetings = [], notes = [], helps = [], myName = '', myTeam = '', currentFilter = 'all';
 let adminUnlocked = false;
-let brands = [], alogs = [], atodos = [], aaronLoaded = false;
-const ADMIN_PASS = 'nid2026'; // ← 管理密碼，可自行修改
+let brands = [], alogs = [], atodos = [], aaronLoadedFor = '';
+const ADMIN_ACCOUNTS = { 'Aaron': 'nid2026', 'Jerry': 'kaiwei2026' }; // ← 管理密碼，可自行修改
+let currentAdmin = '';
 const DEFAULT_MEETINGS = [
   { key: '行政團隊',            leads: '竺均、小粘' },
   { key: '活動團隊',            leads: '阿丞' },
@@ -1194,7 +1217,9 @@ function getMeetingsConfig() {
 function populateMeetingSelect() {
   const sel = document.getElementById('mt-team');
   if (!sel) return;
-  sel.innerHTML = getMeetingsConfig().map(c =>
+  let cfgs = getMeetingsConfig();
+  if (currentAdmin === 'Jerry') cfgs = cfgs.filter(c => c.key === '凱為例行會議');
+  sel.innerHTML = cfgs.map(c =>
     `<option value="${c.key}">${c.label}${c.leads ? '（' + c.leads + '）' : ''}</option>`
   ).join('');
 }
@@ -1260,7 +1285,7 @@ async function loadAllData() {
     renderReports();
     renderAllTodos();
     updateMetrics();
-    if (myName) { renderMyTodos(); renderMyReports(); renderMyMeetings(); renderMyNotes(); renderMyHelps(); }
+    if (myName) { renderMyTodos(); renderMyReports(); renderMyMeetings(); renderMyNotes(); renderMyHelps(); renderMyStats(); }
   } catch(e) {
     console.error(e);
   }
@@ -1355,10 +1380,12 @@ function switchPage(id, btn) {
     if(b.getAttribute('onclick') === `switchPage('${id}',this)`) b.classList.add('active');
   });
   if(id === 'admin' && adminUnlocked) {
-    renderAdminHelps();
-    renderOverview();
-    renderStats();
-    renderAllTodos();
+    if (currentAdmin === 'Aaron') {
+      renderAdminHelps();
+      renderOverview();
+      renderStats();
+      renderAllTodos();
+    }
     renderMeetings();
   }
 }
@@ -1390,8 +1417,12 @@ function loadMyTodos() {
     n = txt.value.trim();
     if (!n) { showToast('請輸入你的姓名'); return; }
   }
-  myName = n;
   const member = members.find(m => m.name === n);
+  if (member && member.password) {
+    const passEl = document.getElementById('my-pass');
+    if (!passEl || passEl.value !== String(member.password)) { showToast('密碼錯誤'); return; }
+  }
+  myName = n;
   myTeam = member ? member.team : '';
 
   document.getElementById('name-gate').style.display = 'none';
@@ -1411,6 +1442,7 @@ function loadMyTodos() {
   renderMyMeetings();
   renderMyNotes();
   renderMyHelps();
+  renderMyStats();
   renderReportTasks();
 }
 function resetMyName() {
@@ -1419,6 +1451,8 @@ function resetMyName() {
   document.getElementById('my-name-input').value = '';
   const sel = document.getElementById('my-name-select');
   if (sel) sel.value = '';
+  const mp = document.getElementById('my-pass');
+  if (mp) mp.value = '';
   const rName = document.getElementById('r-name');
   const rTeam = document.getElementById('r-team');
   if (rName) rName.value = '';
@@ -1426,6 +1460,60 @@ function resetMyName() {
   document.getElementById('name-gate').style.display = 'block';
   document.getElementById('my-todos-area').style.display = 'none';
 }
+function weekdayOf(dateStr) {
+  const d = parseLocalDate(dateStr);
+  const w = d.getDay();
+  return w === 0 ? 7 : w;
+}
+function memberDays(m) {
+  if (m && m.days) {
+    const arr = String(m.days).split(/[,、\s]+/).map(Number).filter(x => x >= 1 && x <= 7);
+    if (arr.length) return arr;
+  }
+  return [1,2,3,4,5];
+}
+function renderMyStats() {
+  const sEl = document.getElementById('g-streak');
+  if (!sEl || !myName) return;
+  const me = members.find(m => m.name === myName);
+  const myDays = memberDays(me);
+  const reported = new Set(reports.filter(r => r.name === myName).map(r => normalizeDate(r.date)));
+
+  let streak = 0;
+  let dstr = today();
+  if (myDays.includes(weekdayOf(dstr)) && !reported.has(dstr)) dstr = addDays(dstr, -1);
+  for (let i = 0; i < 400; i++) {
+    if (myDays.includes(weekdayOf(dstr))) {
+      if (reported.has(dstr)) streak++;
+      else break;
+    }
+    dstr = addDays(dstr, -1);
+  }
+  sEl.textContent = streak;
+
+  const t = today();
+  let cur = t.substring(0, 8) + '01';
+  let req = 0, got = 0;
+  while (cur <= t) {
+    if (myDays.includes(weekdayOf(cur))) {
+      if (cur < t || reported.has(cur)) {
+        req++;
+        if (reported.has(cur)) got++;
+      }
+    }
+    cur = addDays(cur, 1);
+  }
+  document.getElementById('g-month').textContent = req ? Math.round(got/req*100) + '%' : '–';
+
+  const doneT = todos.filter(x => x.done && x.owner === myName);
+  const ontime = doneT.filter(x => x.completedDate && x.completedDate <= x.deadline).length;
+  const rate = doneT.length ? Math.round(ontime/doneT.length*100) : null;
+  document.getElementById('g-task').textContent = rate !== null ? rate + '%' : '–';
+  const medal = rate === null ? '完成第一個任務解鎖段位'
+    : rate >= 90 ? '🥇 金牌跑者' : rate >= 75 ? '🥈 銀牌跑者' : rate >= 60 ? '🥉 銅牌跑者' : '🏃 熱身中';
+  document.getElementById('g-medal').textContent = medal;
+}
+
 function renderMyTodos() {
   const active = todos.filter(t => !t.done && t.owner === myName).sort((a,b) => a.deadline.localeCompare(b.deadline));
   const done   = todos.filter(t =>  t.done && t.owner === myName).sort((a,b) => b.completedDate.localeCompare(a.completedDate));
@@ -1703,7 +1791,7 @@ function toggleDoneList() {
 async function completeTodo(id) {
   const t = todos.find(x => x.id.toString() === id.toString());
   if(t) { t.done = true; t.completedDate = today(); }
-  if(myName) renderMyTodos();
+  if(myName) { renderMyTodos(); renderMyStats(); renderReportTasks(); }
   renderAllTodos();
   updateMetrics();
   showToast('任務完成 ✓');
@@ -1767,14 +1855,32 @@ async function submitReport() {
     // 新增模式
     const entry = { id: Date.now().toString(), name, team, done, plan, block, date: today() };
     reports.unshift(entry);
-    ['r-name','r-done'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('r-team').value = '';
+
+    // 收集勾選的已完成任務
+    const checkedIds = Array.from(document.querySelectorAll('.r-task-check:checked')).map(c => c.value);
+
+    document.getElementById('r-done').value = '';
     renderReports(); updateMetrics();
-    showToast('回報已提交 ✓');
+    if (myName) { renderMyReports(); renderMyStats(); }
+    showToast(checkedIds.length ? `回報已提交，${checkedIds.length} 項任務標記完成 ✓` : '回報已提交 ✓');
+
     if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
       const res = await apiFetch('addReport', { name, team, done, plan, block });
       if (!res.success) showToast('⚠ 同步失敗，請重新整理');
     }
+
+    for (const cid of checkedIds) {
+      const t = todos.find(x => x.id.toString() === cid.toString());
+      if (t) { t.done = true; t.completedDate = today(); }
+      if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+        await apiFetch('completeTodo', { id: cid.toString() });
+      }
+    }
+    if (checkedIds.length) {
+      renderAllTodos(); updateMetrics();
+      if (myName) { renderMyTodos(); renderMyStats(); }
+    }
+    renderReportTasks();
   }
 }
 function renderReports() {
@@ -1932,16 +2038,17 @@ function renderAllTodos() {
 
 // ── Aaron 專區 ──
 async function loadAaronData() {
-  if (aaronLoaded || API_URL === 'YOUR_APPS_SCRIPT_URL_HERE') { renderABrands(); renderALogs(); renderATodos(); return; }
+  const who = currentAdmin || 'Aaron';
+  if (aaronLoadedFor === who || API_URL === 'YOUR_APPS_SCRIPT_URL_HERE') { renderABrands(); renderALogs(); renderATodos(); return; }
   const [bRes, lRes, tRes] = await Promise.all([
     apiFetch('getBrands'),
-    apiFetch('getALogs'),
-    apiFetch('getATodos')
+    apiFetch('getALogs&who=' + encodeURIComponent(who)),
+    apiFetch('getATodos&who=' + encodeURIComponent(who))
   ]);
   if (bRes && bRes.success) brands = bRes.data || [];
   if (lRes && lRes.success) alogs = (lRes.data || []).map(x => ({ ...x, id: x.id.toString(), date: normalizeDate(x.date) }));
   if (tRes && tRes.success) atodos = (tRes.data || []).map(x => ({ ...x, id: x.id.toString(), deadline: normalizeDate(x.deadline), completedDate: x.completedDate ? normalizeDate(x.completedDate) : null }));
-  aaronLoaded = true;
+  aaronLoadedFor = who;
   renderABrands();
   renderALogs();
   renderATodos();
@@ -1972,7 +2079,7 @@ async function addALog() {
   renderALogs();
   showToast('已記一筆 ✓');
   if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-    const res = await apiFetch('addALog', { id: entry.id, brand, content });
+    const res = await apiFetch('addALog', { id: entry.id, brand, content, who: currentAdmin || 'Aaron' });
     if (!res.success) showToast('⚠ 同步失敗，請重新整理');
   }
 }
@@ -1981,7 +2088,7 @@ async function deleteALog(id) {
   alogs = alogs.filter(x => x.id.toString() !== id.toString());
   renderALogs();
   if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-    await apiFetch('deleteALog', { id: id.toString() });
+    await apiFetch('deleteALog', { id: id.toString(), who: currentAdmin || 'Aaron' });
   }
 }
 
@@ -2051,7 +2158,7 @@ async function addATodo() {
   renderATodos();
   showToast('任務已新增 +');
   if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-    const res = await apiFetch('addATodo', { id: entry.id, title, brand, deadline });
+    const res = await apiFetch('addATodo', { id: entry.id, title, brand, deadline, who: currentAdmin || 'Aaron' });
     if (!res.success) showToast('⚠ 同步失敗，請重新整理');
   }
 }
@@ -2062,7 +2169,7 @@ async function doneATodo(id) {
   renderATodos();
   showToast('完成 ✓');
   if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-    await apiFetch('doneATodo', { id: id.toString() });
+    await apiFetch('doneATodo', { id: id.toString(), who: currentAdmin || 'Aaron' });
   }
 }
 
@@ -2070,7 +2177,7 @@ async function deleteATodo(id) {
   atodos = atodos.filter(x => x.id.toString() !== id.toString());
   renderATodos();
   if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-    await apiFetch('deleteATodo', { id: id.toString() });
+    await apiFetch('deleteATodo', { id: id.toString(), who: currentAdmin || 'Aaron' });
   }
 }
 
@@ -2096,18 +2203,31 @@ function renderATodos() {
 
 // ── 管理後台解鎖 ──
 function unlockAdmin() {
+  const user = document.getElementById('admin-user').value;
   const pass = document.getElementById('admin-pass').value;
-  if (pass !== ADMIN_PASS) { showToast('密碼錯誤'); return; }
+  if (pass !== ADMIN_ACCOUNTS[user]) { showToast('密碼錯誤'); return; }
   adminUnlocked = true;
+  currentAdmin = user;
   document.getElementById('admin-gate').style.display = 'none';
   document.getElementById('admin-area').style.display = 'block';
+
+  // 依身分顯示分頁
+  const allowed = user === 'Aaron' ? ['overview','meetings','tasks','stats','aaron'] : ['meetings','aaron'];
+  document.querySelectorAll('#admin-tab-bar .filter-btn').forEach(b => {
+    b.style.display = allowed.includes(b.getAttribute('data-tab')) ? '' : 'none';
+  });
+  const firstBtn = document.querySelector('#admin-tab-bar .filter-btn[data-tab="' + allowed[0] + '"]');
+  switchAdminTab(allowed[0], firstBtn);
+
   populateMeetingSelect();
-  renderAdminHelps();
-  renderOverview();
-  loadAaronData();
-  renderStats();
-  renderAllTodos();
+  if (user === 'Aaron') {
+    renderAdminHelps();
+    renderOverview();
+    renderStats();
+    renderAllTodos();
+  }
   renderMeetings();
+  loadAaronData();
 }
 
 // ── 會議清單 ──
@@ -2167,7 +2287,10 @@ function renderMeetings() {
   const el = document.getElementById('meeting-lists');
   if (!el) return;
   let out = '';
-  getMeetingsConfig().forEach(cfg => {
+  let cfgList = getMeetingsConfig();
+  const jerryView = currentAdmin === 'Jerry';
+  if (jerryView) cfgList = cfgList.filter(c => c.key === '凱為例行會議');
+  cfgList.forEach(cfg => {
     const tracking = meetings.filter(m => m.team === cfg.key && m.status === '追蹤中');
     const pending  = meetings.filter(m => m.team === cfg.key && m.status === '待討論');
     const total = tracking.length + pending.length;
@@ -2188,8 +2311,8 @@ function renderMeetings() {
           <div class="todo-item-title" style="font-size:13px"><span class="badge badge-warn" style="margin-right:6px">🔁 追蹤中</span>${m.content}</div>
           <div class="todo-item-meta">記於 ${m.date}</div>
         </div>
-        <button class="btn btn-sm btn-primary" onclick="finishTracking('${m.id}')">完成 ✓</button>
-        <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteMeeting('${m.id}')">✕</button>
+        ${jerryView ? '' : `<button class="btn btn-sm btn-primary" onclick="finishTracking('${m.id}')">完成 ✓</button>
+        <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteMeeting('${m.id}')">✕</button>`}
       </div>`).join('');
 
     out += pending.map(m => `
@@ -2198,9 +2321,9 @@ function renderMeetings() {
           <div class="todo-item-title" style="font-size:13px">${m.content}</div>
           <div class="todo-item-meta">記於 ${m.date}</div>
         </div>
-        <button class="btn btn-sm" onclick="trackMeeting('${m.id}')">帶追蹤 🔁</button>
+        ${jerryView ? '' : `<button class="btn btn-sm" onclick="trackMeeting('${m.id}')">帶追蹤 🔁</button>
         <button class="btn btn-sm btn-primary" onclick="doneMeeting('${m.id}')">已討論 ✓</button>
-        <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteMeeting('${m.id}')">✕</button>
+        <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteMeeting('${m.id}')">✕</button>`}
       </div>`).join('');
   });
   el.innerHTML = out;
@@ -2266,40 +2389,37 @@ function renderOverview() {
   const todayStr = today();
   const todayReps = reports.filter(r => normalizeDate(r.date) === todayStr);
 
-  // 勾稽名單
+  // 勾稽名單（依每人回報日）
   const rosterEl = document.getElementById('overview-roster');
   if (rosterEl && members.length) {
     const reportedNames = new Set(todayReps.map(r => r.name));
+    const todayW = weekdayOf(todayStr);
+    const isRequired = m => memberDays(m).includes(todayW);
     const teams = ['社群團隊','行政團隊','活動團隊'];
+    const chip = m => {
+      const ok = reportedNames.has(m.name);
+      if (ok) return `<div class="roster-chip reported"><span class="roster-mark">✅</span><span class="roster-name">${m.name}</span></div>`;
+      if (!isRequired(m)) return `<div class="roster-chip" style="opacity:0.45"><span class="roster-mark">💤</span><span class="roster-name">${m.name}</span><span style="font-size:11px;color:var(--gray2)">今日免回報</span></div>`;
+      return `<div class="roster-chip missing"><span class="roster-mark">❌</span><span class="roster-name">${m.name}</span></div>`;
+    };
     let out = '';
     teams.forEach(team => {
       const teamMembers = members.filter(m => m.team === team);
       if (!teamMembers.length) return;
       out += `<div class="roster-team-label">${team}</div><div class="roster-grid">`;
-      out += teamMembers.map(m => {
-        const ok = reportedNames.has(m.name);
-        return `<div class="roster-chip ${ok?'reported':'missing'}">
-          <span class="roster-mark">${ok?'✅':'❌'}</span>
-          <span class="roster-name">${m.name}</span>
-        </div>`;
-      }).join('');
+      out += teamMembers.map(chip).join('');
       out += '</div>';
     });
-    // 沒對到團隊的成員
     const others = members.filter(m => !teams.includes(m.team));
     if (others.length) {
       out += '<div class="roster-team-label">其他</div><div class="roster-grid">';
-      out += others.map(m => {
-        const ok = reportedNames.has(m.name);
-        return `<div class="roster-chip ${ok?'reported':'missing'}">
-          <span class="roster-mark">${ok?'✅':'❌'}</span>
-          <span class="roster-name">${m.name}</span>
-        </div>`;
-      }).join('');
+      out += others.map(chip).join('');
       out += '</div>';
     }
-    const missCount = members.filter(m => !reportedNames.has(m.name)).length;
-    out = `<div style="font-size:13px;color:var(--gray1);margin-bottom:12px">已回報 <span style="color:var(--green);font-weight:700">${members.length - missCount}</span> / ${members.length} 人${missCount ? `，還有 <span style="color:var(--red);font-weight:700">${missCount}</span> 人未回報` : '，全員到齊 🎉'}</div>` + out;
+    const requiredMembers = members.filter(isRequired);
+    const gotCount = requiredMembers.filter(m => reportedNames.has(m.name)).length;
+    const missCount = requiredMembers.length - gotCount;
+    out = `<div style="font-size:13px;color:var(--gray1);margin-bottom:12px">今日應回報 ${requiredMembers.length} 人，已回報 <span style="color:var(--green);font-weight:700">${gotCount}</span> 人${missCount ? `，還缺 <span style="color:var(--red);font-weight:700">${missCount}</span> 人` : '，全員到齊 🎉'}</div>` + out;
     rosterEl.innerHTML = out;
   }
 
