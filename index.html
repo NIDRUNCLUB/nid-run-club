@@ -967,6 +967,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <button class="filter-btn" data-tab="tasks" onclick="switchAdminTab('tasks',this)">📋 任務</button>
           <button class="filter-btn" data-tab="stats" onclick="switchAdminTab('stats',this)">📈 統計</button>
           <button class="filter-btn" data-tab="aaron" onclick="switchAdminTab('aaron',this)">🏷 我的</button>
+          <button class="filter-btn" style="margin-left:auto" onclick="adminLogout()">⇄ 切換身分</button>
         </div>
 
         <!-- ── 分頁：總覽 ── -->
@@ -1160,6 +1161,26 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <button class="mob-btn" onclick="switchPage('admin',this)"><span class="mob-icon">🔒</span>管理</button>
 </nav>
 
+<!-- 改期視窗 -->
+<div id="rs-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:center;justify-content:center;padding:20px">
+  <div class="card" style="max-width:420px;width:100%;margin:0">
+    <div class="card-title">修改截止日期</div>
+    <div style="font-size:14px;color:var(--white);margin-bottom:14px" id="rs-task-title"></div>
+    <div class="form-group">
+      <label class="form-label">新的截止日期</label>
+      <input class="form-input" type="date" id="rs-date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">改期原因（必填）</label>
+      <textarea class="form-textarea" id="rs-reason" placeholder="例：廠商延遲回覆、優先處理其他緊急任務…" style="min-height:64px"></textarea>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="closeReschedule()">取消</button>
+      <button class="btn btn-primary" onclick="confirmReschedule()">確認改期 →</button>
+    </div>
+  </div>
+</div>
+
 <!-- 交接視窗 -->
 <div id="handoff-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:center;justify-content:center;padding:20px">
   <div class="card" style="max-width:420px;width:100%;margin:0">
@@ -1272,9 +1293,9 @@ async function loadAllData() {
       apiFetch('getHelps')
     ]);
     if (repRes.success) reports = repRes.data.map((r, i) => ({ ...r, id: r.id ? r.id.toString() : 'r'+i, date: normalizeDate(r.date) }));
-    if (todRes.success) todos = todRes.data.map(t => ({ ...t, id: t.id.toString(), deadline: normalizeDate(t.deadline), completedDate: t.completedDate ? normalizeDate(t.completedDate) : null, source: t.source || '', handoff: t.handoff || '' }));
+    if (todRes.success) todos = todRes.data.map(t => ({ ...t, id: t.id.toString(), deadline: normalizeDate(t.deadline), completedDate: t.completedDate ? normalizeDate(t.completedDate) : null, source: t.source || '', handoff: t.handoff || '', reschedule: t.reschedule || '' }));
     if (memRes && memRes.success) members = memRes.data || [];
-    if (mtRes && mtRes.success) meetings = (mtRes.data || []).map(m => ({ ...m, id: m.id.toString(), date: normalizeDate(m.date), doneDate: m.doneDate ? normalizeDate(m.doneDate) : '' }));
+    if (mtRes && mtRes.success) meetings = (mtRes.data || []).map(m => ({ ...m, id: m.id.toString(), date: normalizeDate(m.date), doneDate: m.doneDate ? normalizeDate(m.doneDate) : '', by: m.by || '' }));
     if (cfgRes && cfgRes.success) meetingConfigs = cfgRes.data || [];
     if (noteRes && noteRes.success) notes = (noteRes.data || []).map(n => ({ ...n, id: n.id.toString(), date: normalizeDate(n.date) }));
     if (helpRes && helpRes.success) helps = (helpRes.data || []).map(h => ({ ...h, id: h.id.toString(), date: normalizeDate(h.date) }));
@@ -1543,16 +1564,19 @@ function renderMyTodos() {
     el.innerHTML = active.map(t => {
       const d = daysUntil(t.deadline);
       const badges = (t.source === '指派' ? ' <span class="badge badge-social" style="margin-left:6px">Aaron 指派</span>' : '')
-        + (t.handoff ? ' <span class="badge badge-admin" style="margin-left:6px">🤝 交接</span>' : '');
+        + (t.handoff ? ' <span class="badge badge-admin" style="margin-left:6px">🤝 交接</span>' : '')
+        + (t.reschedule ? ' <span class="badge badge-warn" style="margin-left:6px">📅 改期</span>' : '');
       return `<div class="todo-item ${itemCls(d)}">
         <span class="dot ${dotCls(d)}"></span>
         <div class="todo-item-content">
           <div class="todo-item-title">${t.title}${badges}</div>
           <div class="todo-item-meta">${teamBadge(t.team)} &nbsp; 截止 ${t.deadline}</div>
           ${t.handoff ? `<div class="todo-item-meta" style="color:var(--admin-c)">🤝 ${t.handoff}</div>` : ''}
+          ${t.reschedule ? `<div class="todo-item-meta" style="color:var(--orange)">📅 ${t.reschedule}</div>` : ''}
         </div>
         ${statusBadge(d)}
-        <button class="btn btn-sm" onclick="openHandoff('${t.id}')">交接 →</button>
+        <button class="btn btn-sm" onclick="openReschedule('${t.id}')">改期 📅</button>
+        ${myTeam === '行政團隊' ? `<button class="btn btn-sm" onclick="openHandoff('${t.id}')">交接 →</button>` : ''}
         <button class="btn btn-sm btn-primary" onclick="completeTodo('${t.id}')">完成 ✓</button>
       </div>`;
     }).join('');
@@ -1672,7 +1696,7 @@ function renderMyNotes() {
   const card = document.getElementById('my-notes-card');
   const el = document.getElementById('my-notes-list');
   if (!card || !el) return;
-  if (!myTeam) { card.style.display = 'none'; return; }
+  if (myTeam !== '行政團隊') { card.style.display = 'none'; return; }
   card.style.display = 'block';
   const pending = notes.filter(n => n.team === myTeam && n.status === '待處理')
     .sort((a,b) => b.id.localeCompare(a.id));
@@ -1688,6 +1712,47 @@ function renderMyNotes() {
       </div>
       <button class="btn btn-sm btn-primary" onclick="doneNote('${n.id}')">處理完成 ✓</button>
     </div>`).join('');
+}
+
+// ── 任務改期 ──
+let rescheduleTargetId = null;
+
+function openReschedule(id) {
+  const t = todos.find(x => x.id.toString() === id.toString());
+  if (!t) return;
+  rescheduleTargetId = id.toString();
+  document.getElementById('rs-task-title').textContent = '「' + t.title + '」目前截止：' + t.deadline;
+  document.getElementById('rs-date').value = t.deadline;
+  document.getElementById('rs-reason').value = '';
+  document.getElementById('rs-overlay').style.display = 'flex';
+}
+
+function closeReschedule() {
+  rescheduleTargetId = null;
+  document.getElementById('rs-overlay').style.display = 'none';
+}
+
+async function confirmReschedule() {
+  const newDate = document.getElementById('rs-date').value;
+  const reason = document.getElementById('rs-reason').value.trim();
+  if (!newDate) { showToast('請選擇新的截止日期'); return; }
+  if (!reason) { showToast('請填寫改期原因'); return; }
+  const t = todos.find(x => x.id.toString() === rescheduleTargetId);
+  if (!t) { closeReschedule(); return; }
+  if (newDate === t.deadline) { showToast('日期沒有變更'); return; }
+  const who = myName || currentAdmin || '';
+  const note = `${t.deadline} → ${newDate}（${today()} ${who}）：${reason}`;
+  t.reschedule = t.reschedule ? t.reschedule + ' | ' + note : note;
+  t.deadline = newDate;
+  closeReschedule();
+  if (myName) { renderMyTodos(); renderMyStats(); renderReportTasks(); }
+  renderAllTodos();
+  updateMetrics();
+  showToast('已改期 ✓');
+  if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+    const res = await apiFetch('rescheduleTodo', { id: t.id.toString(), newDeadline: newDate, note });
+    if (!res.success) showToast('⚠ 同步失敗，請重新整理');
+  }
 }
 
 let handoffTargetId = null;
@@ -1753,14 +1818,14 @@ function renderMyMeetings() {
     <div class="todo-item warn" style="padding:10px 14px">
       <div class="todo-item-content">
         <div class="todo-item-title" style="font-size:13px"><span class="badge badge-warn" style="margin-right:6px">🔁 持續追蹤</span>${m.content}</div>
-        <div class="todo-item-meta">記於 ${m.date}</div>
+        <div class="todo-item-meta">記於 ${m.date}${m.by && m.by !== currentAdmin ? `（${m.by} 記）` : ''}</div>
       </div>
     </div>`).join('');
   out += pending.map(m => `
     <div class="todo-item" style="border-left-color:var(--black5);padding:10px 14px">
       <div class="todo-item-content">
         <div class="todo-item-title" style="font-size:13px">${m.content}</div>
-        <div class="todo-item-meta">記於 ${m.date}</div>
+        <div class="todo-item-meta">記於 ${m.date}${m.by && m.by !== currentAdmin ? `（${m.by} 記）` : ''}</div>
       </div>
     </div>`).join('');
   el.innerHTML = out;
@@ -2028,7 +2093,7 @@ function renderAllTodos() {
     <tbody>${list.map(t => {
       const d = daysUntil(t.deadline);
       return `<tr>
-        <td><span class="dot ${dotCls(d)}" style="margin-right:8px;vertical-align:middle"></span>${t.title}</td>
+        <td><span class="dot ${dotCls(d)}" style="margin-right:8px;vertical-align:middle"></span>${t.title}${t.reschedule ? `<div style="font-size:11px;color:var(--orange);margin-top:2px">📅 ${t.reschedule}</div>` : ''}</td>
         <td style="color:var(--gray1)">${t.owner}</td>
         <td>${teamBadge(t.team)}</td>
         <td style="font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:0.04em;color:var(--gray1)">${t.deadline}</td>
@@ -2208,6 +2273,18 @@ function renderATodos() {
   }).join('');
 }
 
+// ── 管理者登出切換 ──
+function adminLogout() {
+  adminUnlocked = false;
+  currentAdmin = '';
+  aaronLoadedFor = '';
+  alogs = []; atodos = [];
+  const pass = document.getElementById('admin-pass');
+  if (pass) pass.value = '';
+  document.getElementById('admin-area').style.display = 'none';
+  document.getElementById('admin-gate').style.display = 'block';
+}
+
 // ── 管理後台解鎖 ──
 function unlockAdmin() {
   const user = document.getElementById('admin-user').value;
@@ -2242,13 +2319,13 @@ async function addMeeting() {
   const team = document.getElementById('mt-team').value;
   const content = document.getElementById('mt-content').value.trim();
   if (!content) { showToast('請輸入內容'); return; }
-  const entry = { id: Date.now().toString(), team, content, status: '待討論', date: today() };
+  const entry = { id: Date.now().toString(), team, content, status: '待討論', date: today(), by: currentAdmin || 'Aaron' };
   meetings.push(entry);
   document.getElementById('mt-content').value = '';
   renderMeetings();
   showToast('已記下 ✓');
   if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-    const res = await apiFetch('addMeeting', { id: entry.id, team, content });
+    const res = await apiFetch('addMeeting', { id: entry.id, team, content, by: currentAdmin || 'Aaron' });
     if (!res.success) showToast('⚠ 同步失敗，請重新整理');
   }
 }
@@ -2316,7 +2393,7 @@ function renderMeetings() {
       <div class="todo-item warn" style="padding:10px 14px">
         <div class="todo-item-content">
           <div class="todo-item-title" style="font-size:13px"><span class="badge badge-warn" style="margin-right:6px">🔁 追蹤中</span>${m.content}</div>
-          <div class="todo-item-meta">記於 ${m.date}</div>
+          <div class="todo-item-meta">記於 ${m.date}${m.by && m.by !== currentAdmin ? `（${m.by} 記）` : ''}</div>
         </div>
         ${jerryView ? '' : `<button class="btn btn-sm btn-primary" onclick="finishTracking('${m.id}')">完成 ✓</button>
         <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteMeeting('${m.id}')">✕</button>`}
@@ -2326,7 +2403,7 @@ function renderMeetings() {
       <div class="todo-item" style="border-left-color:var(--black5);padding:10px 14px">
         <div class="todo-item-content">
           <div class="todo-item-title" style="font-size:13px">${m.content}</div>
-          <div class="todo-item-meta">記於 ${m.date}</div>
+          <div class="todo-item-meta">記於 ${m.date}${m.by && m.by !== currentAdmin ? `（${m.by} 記）` : ''}</div>
         </div>
         ${jerryView ? '' : `<button class="btn btn-sm" onclick="trackMeeting('${m.id}')">帶追蹤 🔁</button>
         <button class="btn btn-sm btn-primary" onclick="doneMeeting('${m.id}')">已討論 ✓</button>
