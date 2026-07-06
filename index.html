@@ -825,26 +825,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <button class="btn btn-ghost btn-sm" onclick="resetMyName()" style="margin-left:8px">切換</button>
         </div>
 
-        <!-- 團隊交接留言 -->
-        <div class="card" id="my-notes-card" style="display:none">
-          <div class="card-title">🤝 團隊交接留言 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">留給同團隊夥伴的訊息，處理完打勾收掉</span></div>
-          <div style="display:flex;gap:8px;margin-bottom:14px">
-            <input class="form-input" type="text" id="note-content" placeholder="例：LINE 回到下午 3 點那則，後面的麻煩接手…" style="flex:1" onkeydown="if(event.key==='Enter' && !event.isComposing && event.keyCode!==229)addNote()">
-            <button class="btn btn-primary" onclick="addNote()" style="white-space:nowrap">留言 +</button>
-          </div>
-          <div id="my-notes-list"></div>
-        </div>
-
-        <!-- 請主管協助 -->
-        <div class="card" id="my-help-card">
-          <div class="card-title">🙋 請 Aaron 協助 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">需要 Aaron 幫忙解決的問題，送出後 Aaron 會在後台看到</span></div>
-          <div style="display:flex;gap:8px;margin-bottom:14px">
-            <input class="form-input" type="text" id="help-content" placeholder="例：廠商報價卡住需要你出面、系統權限不夠…" style="flex:1" onkeydown="if(event.key==='Enter' && !event.isComposing && event.keyCode!==229)addHelp()">
-            <button class="btn btn-primary" onclick="addHelp()" style="white-space:nowrap">送出 🙋</button>
-          </div>
-          <div id="my-help-list"></div>
-        </div>
-
         <!-- 本週會議討論事項 -->
         <div class="card" id="my-meeting-card" style="display:none;border-color:rgba(255,229,0,0.25)">
           <div class="card-title">📌 週二會議討論事項 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">Aaron 預計與你的團隊討論的內容，先看過準備一下</span></div>
@@ -884,6 +864,27 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             <button class="btn btn-primary" id="r-submit-btn" onclick="submitReport()">提交回報 →</button>
           </div>
         </div>
+
+        <!-- 團隊交接留言 -->
+        <div class="card" id="my-notes-card" style="display:none">
+          <div class="card-title">🤝 團隊交接留言 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">留給同團隊夥伴的訊息，處理完打勾收掉</span></div>
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <input class="form-input" type="text" id="note-content" placeholder="例：LINE 回到下午 3 點那則，後面的麻煩接手…" style="flex:1" onkeydown="if(event.key==='Enter' && !event.isComposing && event.keyCode!==229)addNote()">
+            <button class="btn btn-primary" onclick="addNote()" style="white-space:nowrap">留言 +</button>
+          </div>
+          <div id="my-notes-list"></div>
+        </div>
+
+        <!-- 請主管協助 -->
+        <div class="card" id="my-help-card">
+          <div class="card-title">🙋 請 Aaron 協助 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">需要 Aaron 幫忙解決的問題，送出後 Aaron 會在後台看到</span></div>
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <input class="form-input" type="text" id="help-content" placeholder="例：廠商報價卡住需要你出面、系統權限不夠…" style="flex:1" onkeydown="if(event.key==='Enter' && !event.isComposing && event.keyCode!==229)addHelp()">
+            <button class="btn btn-primary" onclick="addHelp()" style="white-space:nowrap">送出 🙋</button>
+          </div>
+          <div id="my-help-list"></div>
+        </div>
+
 
         <!-- 快速新增任務 -->
         <div class="card">
