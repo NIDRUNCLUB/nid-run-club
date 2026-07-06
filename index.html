@@ -856,10 +856,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             <label class="form-label">今日完成事項</label>
             <textarea class="form-textarea" id="r-done" placeholder="例：完成 IG 貼文排程、回覆客戶訊息 10 則…"></textarea>
           </div>
-          <div class="form-group">
-            <label class="form-label">問題 / 需要支援</label>
-            <textarea class="form-textarea" id="r-block" placeholder="如無問題請填「無」" style="min-height:56px"></textarea>
-          </div>
           <div style="display:flex;justify-content:flex-end">
             <button class="btn btn-primary" id="r-submit-btn" onclick="submitReport()">提交回報 →</button>
           </div>
@@ -1746,7 +1742,8 @@ async function submitReport() {
   const done  = document.getElementById('r-done').value.trim();
   const planEl = document.getElementById('r-plan');
   const plan  = planEl ? planEl.value.trim() : '';
-  const block = document.getElementById('r-block').value.trim();
+  const blockEl = document.getElementById('r-block');
+  const block = blockEl ? blockEl.value.trim() : '';
   if(!name||!team||!done) { showToast('請填寫姓名、團隊和今日完成事項'); return; }
 
   const btn = document.getElementById('r-submit-btn');
@@ -1758,7 +1755,7 @@ async function submitReport() {
     if (r) { r.name = name; r.team = team; r.done = done; r.plan = plan; r.block = block; }
     btn.textContent = '提交回報 →';
     btn.removeAttribute('data-edit-id');
-    ['r-name','r-done','r-block'].forEach(id => document.getElementById(id).value = '');
+    ['r-name','r-done'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('r-team').value = '';
     renderReports(); updateMetrics();
     showToast('回報已更新 ✓');
@@ -1770,7 +1767,7 @@ async function submitReport() {
     // 新增模式
     const entry = { id: Date.now().toString(), name, team, done, plan, block, date: today() };
     reports.unshift(entry);
-    ['r-name','r-done','r-block'].forEach(id => document.getElementById(id).value = '');
+    ['r-name','r-done'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('r-team').value = '';
     renderReports(); updateMetrics();
     showToast('回報已提交 ✓');
@@ -1806,7 +1803,7 @@ function editReport(id) {
   document.getElementById('r-team').value  = r.team;
   document.getElementById('r-done').value  = r.done;
   if (document.getElementById('r-plan')) document.getElementById('r-plan').value = r.plan || '';
-  document.getElementById('r-block').value = r.block || '';
+  if (document.getElementById('r-block')) document.getElementById('r-block').value = r.block || '';
   // Mark as editing
   document.getElementById('r-submit-btn').textContent = '更新回報 →';
   document.getElementById('r-submit-btn').setAttribute('data-edit-id', id);
