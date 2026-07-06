@@ -1161,6 +1161,29 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <button class="mob-btn" onclick="switchPage('admin',this)"><span class="mob-icon">🔒</span>管理</button>
 </nav>
 
+<!-- 個人任務/日誌編輯視窗 -->
+<div id="pe-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:center;justify-content:center;padding:20px">
+  <div class="card" style="max-width:420px;width:100%;margin:0">
+    <div class="card-title" id="pe-title-label">編輯</div>
+    <div class="form-group">
+      <label class="form-label" id="pe-content-label">內容</label>
+      <input class="form-input" type="text" id="pe-content">
+    </div>
+    <div class="form-group">
+      <label class="form-label">品牌</label>
+      <select class="form-select" id="pe-brand"></select>
+    </div>
+    <div class="form-group" id="pe-date-wrap">
+      <label class="form-label">截止日期</label>
+      <input class="form-input" type="date" id="pe-date">
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="closePersonalEdit()">取消</button>
+      <button class="btn btn-primary" onclick="confirmPersonalEdit()">儲存 →</button>
+    </div>
+  </div>
+</div>
+
 <!-- 改期視窗 -->
 <div id="rs-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:center;justify-content:center;padding:20px">
   <div class="card" style="max-width:420px;width:100%;margin:0">
@@ -2112,6 +2135,66 @@ function renderAllTodos() {
 }
 
 // ── Aaron 專區 ──
+// ── 個人任務/日誌編輯 ──
+let peMode = '', peTargetId = null;
+
+function openPersonalEdit(mode, id) {
+  peMode = mode;
+  peTargetId = id.toString();
+  const item = mode === 'atodo'
+    ? atodos.find(x => x.id.toString() === peTargetId)
+    : alogs.find(x => x.id.toString() === peTargetId);
+  if (!item) return;
+  document.getElementById('pe-title-label').textContent = mode === 'atodo' ? '編輯任務' : '編輯日誌';
+  document.getElementById('pe-content-label').textContent = mode === 'atodo' ? '任務名稱' : '內容';
+  document.getElementById('pe-content').value = mode === 'atodo' ? item.title : item.content;
+  // 品牌選單
+  const list = brands.length ? brands : ['NID RUN CLUB', 'NID Base+', 'NID For Kids', 'NID Running'];
+  const sel = document.getElementById('pe-brand');
+  sel.innerHTML = list.map(b => `<option value="${b}">${b}</option>`).join('');
+  sel.value = item.brand;
+  // 日期欄僅任務顯示
+  document.getElementById('pe-date-wrap').style.display = mode === 'atodo' ? 'block' : 'none';
+  if (mode === 'atodo') document.getElementById('pe-date').value = item.deadline;
+  document.getElementById('pe-overlay').style.display = 'flex';
+}
+
+function closePersonalEdit() {
+  peMode = ''; peTargetId = null;
+  document.getElementById('pe-overlay').style.display = 'none';
+}
+
+async function confirmPersonalEdit() {
+  const content = document.getElementById('pe-content').value.trim();
+  const brand = document.getElementById('pe-brand').value;
+  if (!content) { showToast('內容不能空白'); return; }
+  const who = currentAdmin || 'Aaron';
+
+  if (peMode === 'atodo') {
+    const deadline = document.getElementById('pe-date').value;
+    if (!deadline) { showToast('請選擇截止日期'); return; }
+    const t = atodos.find(x => x.id.toString() === peTargetId);
+    if (t) { t.title = content; t.brand = brand; t.deadline = deadline; }
+    closePersonalEdit();
+    renderATodos();
+    showToast('已更新 ✓');
+    if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+      const res = await apiFetch('editATodo', { id: peTargetId, title: content, brand, deadline, who });
+      if (!res.success) showToast('⚠ 同步失敗，請重新整理');
+    }
+  } else {
+    const l = alogs.find(x => x.id.toString() === peTargetId);
+    if (l) { l.content = content; l.brand = brand; }
+    closePersonalEdit();
+    renderALogs();
+    showToast('已更新 ✓');
+    if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+      const res = await apiFetch('editALog', { id: peTargetId, content, brand, who });
+      if (!res.success) showToast('⚠ 同步失敗，請重新整理');
+    }
+  }
+}
+
 async function loadAaronData() {
   const who = currentAdmin || 'Aaron';
   if (aaronLoadedFor === who || API_URL === 'YOUR_APPS_SCRIPT_URL_HERE') { renderABrands(); renderALogs(); renderATodos(); return; }
@@ -2185,6 +2268,7 @@ function renderALogs() {
             <div class="todo-item-title" style="font-size:13px">${l.content}</div>
           </div>
           <span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--gray2)">${logTime(l.id)}</span>
+          <button class="btn btn-sm btn-ghost" onclick="openPersonalEdit('alog','${l.id}')" style="color:var(--gray1)">編輯</button>
           <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteALog('${l.id}')">✕</button>
         </div>`).join('')}
     `).join('');
@@ -2270,6 +2354,7 @@ function renderATodos() {
         <div class="todo-item-meta"><span style="color:var(--yellow)">${t.brand}</span> &nbsp; 截止 ${t.deadline}</div>
       </div>
       ${statusBadge(d)}
+      <button class="btn btn-sm btn-ghost" onclick="openPersonalEdit('atodo','${t.id}')" style="color:var(--gray1)">編輯</button>
       <button class="btn btn-sm btn-primary" onclick="doneATodo('${t.id}')">完成 ✓</button>
       <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteATodo('${t.id}')">✕</button>
     </div>`;
