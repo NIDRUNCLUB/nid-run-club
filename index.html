@@ -992,9 +992,14 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <div id="admin-help-list"></div>
         </div>
 
+        <div class="card" id="yday-card">
+          <div class="card-title">昨日回報勾稽</div>
+          <div id="overview-roster-yday"></div>
+        </div>
+
         <div class="card">
-          <div class="card-title">今日回報勾稽</div>
-          <div id="overview-roster"><div class="empty" style="padding:20px"><span class="empty-icon">👥</span>尚未設定員工名單<br><span style="font-size:12px;color:var(--gray2)">請在 Google Sheet 的「員工名單」工作表填入姓名與團隊</span></div></div>
+          <div class="card-title">本月回報統計</div>
+          <div id="overview-month-stats"><div class="empty"><span class="empty-icon">📊</span>尚無資料</div></div>
         </div>
 
         <div class="card">
@@ -2564,38 +2569,60 @@ function renderOverview() {
   const todayStr = today();
   const todayReps = reports.filter(r => normalizeDate(r.date) === todayStr);
 
-  // 勾稽名單（依每人回報日）
-  const rosterEl = document.getElementById('overview-roster');
-  if (rosterEl && members.length) {
-    const reportedNames = new Set(todayReps.map(r => r.name));
-    const todayW = weekdayOf(todayStr);
-    const isRequired = m => memberDays(m).includes(todayW);
-    const teams = ['社群團隊','行政團隊','活動團隊'];
-    const chip = m => {
-      const ok = reportedNames.has(m.name);
-      if (ok) return `<div class="roster-chip reported"><span class="roster-mark">✅</span><span class="roster-name">${m.name}</span></div>`;
-      if (!isRequired(m)) return `<div class="roster-chip" style="opacity:0.45"><span class="roster-mark">💤</span><span class="roster-name">${m.name}</span><span style="font-size:11px;color:var(--gray2)">今日免回報</span></div>`;
-      return `<div class="roster-chip missing"><span class="roster-mark">❌</span><span class="roster-name">${m.name}</span></div>`;
-    };
-    let out = '';
-    teams.forEach(team => {
-      const teamMembers = members.filter(m => m.team === team);
-      if (!teamMembers.length) return;
-      out += `<div class="roster-team-label">${team}</div><div class="roster-grid">`;
-      out += teamMembers.map(chip).join('');
-      out += '</div>';
-    });
-    const others = members.filter(m => !teams.includes(m.team));
-    if (others.length) {
-      out += '<div class="roster-team-label">其他</div><div class="roster-grid">';
-      out += others.map(chip).join('');
-      out += '</div>';
+  // 昨日回報勾稽
+  const yEl = document.getElementById('overview-roster-yday');
+  if (yEl && members.length) {
+    const yday = addDays(todayStr, -1);
+    const ydayW = weekdayOf(yday);
+    const ydayReported = new Set(reports.filter(r => normalizeDate(r.date) === yday).map(r => r.name));
+    const requiredY = members.filter(m => memberDays(m).includes(ydayW));
+    if (!requiredY.length) {
+      yEl.innerHTML = `<div style="font-size:13px;color:var(--gray2)">昨日（${yday}）無人需要回報 💤</div>`;
+    } else {
+      const missing = requiredY.filter(m => !ydayReported.has(m.name));
+      let yOut = `<div style="font-size:13px;color:var(--gray1);margin-bottom:12px">昨日（${yday}）應回報 ${requiredY.length} 人` +
+        (missing.length ? `，<span style="color:var(--red);font-weight:700">缺 ${missing.length} 人：${missing.map(m => m.name).join('、')}</span>` : '，全員交齊 🎉') + '</div>';
+      yOut += '<div class="roster-grid">';
+      yOut += requiredY.map(m => {
+        const ok = ydayReported.has(m.name);
+        return `<div class="roster-chip ${ok?'reported':'missing'}"><span class="roster-mark">${ok?'✅':'❌'}</span><span class="roster-name">${m.name}</span></div>`;
+      }).join('');
+      yOut += '</div>';
+      yEl.innerHTML = yOut;
     }
-    const requiredMembers = members.filter(isRequired);
-    const gotCount = requiredMembers.filter(m => reportedNames.has(m.name)).length;
-    const missCount = requiredMembers.length - gotCount;
-    out = `<div style="font-size:13px;color:var(--gray1);margin-bottom:12px">今日應回報 ${requiredMembers.length} 人，已回報 <span style="color:var(--green);font-weight:700">${gotCount}</span> 人${missCount ? `，還缺 <span style="color:var(--red);font-weight:700">${missCount}</span> 人` : '，全員到齊 🎉'}</div>` + out;
-    rosterEl.innerHTML = out;
+  }
+
+  // 本月回報統計（算到昨天，今天有交才計入）
+  const mEl = document.getElementById('overview-month-stats');
+  if (mEl && members.length) {
+    const yday2 = addDays(todayStr, -1);
+    const monthStart = todayStr.substring(0, 8) + '01';
+    const statRows = members.map(m => {
+      const days = memberDays(m);
+      const reportedSet = new Set(reports.filter(r => r.name === m.name).map(r => normalizeDate(r.date)));
+      let req = 0, got = 0;
+      let cur = monthStart;
+      while (cur <= yday2) {
+        if (days.includes(weekdayOf(cur))) { req++; if (reportedSet.has(cur)) got++; }
+        cur = addDays(cur, 1);
+      }
+      if (days.includes(weekdayOf(todayStr)) && reportedSet.has(todayStr)) { req++; got++; }
+      const miss = req - got;
+      const rate = req ? Math.round(got/req*100) : null;
+      return { name: m.name, team: m.team, req, got, miss, rate };
+    });
+    mEl.innerHTML = `<table><thead><tr><th>成員</th><th>團隊</th><th>應回報</th><th>已回報</th><th>缺交</th><th>回報率</th></tr></thead><tbody>` +
+      statRows.map(r => {
+        const color = r.rate === null ? 'var(--gray2)' : r.rate >= 90 ? 'var(--green)' : r.rate >= 70 ? 'var(--orange)' : 'var(--red)';
+        return `<tr>
+          <td>${r.name}</td>
+          <td>${teamBadge(r.team)}</td>
+          <td style="color:var(--gray1)">${r.req}</td>
+          <td style="color:var(--gray1)">${r.got}</td>
+          <td style="color:${r.miss ? 'var(--red)' : 'var(--gray1)'};font-weight:${r.miss ? '700' : '400'}">${r.miss}</td>
+          <td style="color:${color};font-weight:700;font-family:'Barlow Condensed',sans-serif;font-size:15px">${r.rate !== null ? r.rate + '%' : '–'}</td>
+        </tr>`;
+      }).join('') + '</tbody></table>';
   }
 
   const repEl = document.getElementById('overview-reports');
