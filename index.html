@@ -2794,7 +2794,7 @@ function renderMeetings() {
           <div class="todo-item-title" style="font-size:13px">${m.content}</div>
           <div class="todo-item-meta">記於 ${m.date}${m.by && m.by !== currentAdmin ? `（${m.by} 記）` : ''}</div>
         </div>
-        ${jerryView ? '' : `<button class="btn btn-sm" onclick="trackMeeting('${m.id}')">帶追蹤 🔁</button>
+        ${jerryView ? '' : `<button class="btn btn-sm" onclick="trackMeeting('${m.id}')">待追蹤 🔁</button>
         <button class="btn btn-sm btn-primary" onclick="doneMeeting('${m.id}')">已討論 ✓</button>
         <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteMeeting('${m.id}')">✕</button>`}
       </div>`).join('');
