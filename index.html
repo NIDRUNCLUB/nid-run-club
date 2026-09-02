@@ -1059,18 +1059,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </div>
 
         <div class="card">
-          <div class="card-title">回報月曆 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">點某一天看當天全員回報內容</span></div>
-          <div class="cal-head">
-            <button class="btn btn-sm" onclick="calMove('admin',-1)">‹ 上個月</button>
-            <div class="cal-title" id="admin-cal-title"></div>
-            <button class="btn btn-sm" onclick="calMove('admin',1)">下個月 ›</button>
-          </div>
-          <div class="cal-weekhead"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
-          <div class="cal-grid" id="admin-cal-grid"></div>
-          <div id="admin-cal-detail" class="cal-detail"></div>
-        </div>
-
-        <div class="card">
           <div class="card-title">今日回報狀況</div>
           <div id="overview-reports"><div class="empty"><span class="empty-icon">⏳</span>今日尚無回報</div></div>
         </div>
@@ -1364,7 +1352,6 @@ function switchAdminTab(name, btn) {
     btn.parentElement.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
   }
-  if (name === 'overview') renderCalendarFor('admin');
 }
 let isLoading = false;
 
@@ -1419,7 +1406,6 @@ async function loadAllData() {
     populateMeetingSelect();
     renderEvents();
     if (adminUnlocked) renderMeetings();
-    if (adminUnlocked && currentAdmin === 'Aaron') renderCalendarFor('admin');
     renderReports();
     renderAllTodos();
     updateMetrics();
@@ -2864,7 +2850,6 @@ function renderMeetingHistory() {
 
 // ── overview ──
 function renderOverview() {
-  renderCalendarFor('admin'); // 回報月曆（已併入總覽）
   const todayStr = today();
   const todayReps = reports.filter(r => normalizeDate(r.date) === todayStr);
 
