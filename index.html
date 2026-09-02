@@ -1006,11 +1006,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <div class="name-gate-row" style="max-width:380px">
           <select class="form-select" id="admin-user" style="max-width:110px">
             <option value="Aaron">Aaron</option>
-            <option value="Jerry">Jerry</option>
-            <option value="Solo">Solo（高雄）</option>
-            <option value="Jax">Jax（高雄）</option>
-            <option value="正洋">正洋（NID Base+）</option>
-            <option value="謝明倢">謝明倢（NID KIDS）</option>
           </select>
           <input class="form-input" type="password" id="admin-pass" placeholder="密碼" onkeydown="if(event.key==='Enter')unlockAdmin()" style="flex:1">
           <button class="btn btn-primary" onclick="unlockAdmin()">解鎖 →</button>
@@ -1306,12 +1301,37 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbxasth4ch9ANFp8zk-tgjeF
 let reports = [], todos = [], members = [], meetings = [], notes = [], helps = [], myName = '', myTeam = '', currentFilter = 'all';
 let adminUnlocked = false;
 let brands = [], alogs = [], atodos = [], aaronLoadedFor = '';
-const ADMIN_ACCOUNTS = { 'Aaron': 'nid2026', 'Jerry': 'kaiwei2026', 'Solo': 'solo2026', 'Jax': 'jax2026', '正洋': 'base2026', '謝明倢': 'kids2026' }; // ← 管理密碼，可自行修改
-// 受限身分：只看得到指定那一本會議（可看＋可自己記，不能標完成/刪除）
-// 注意：Jerry 不在此清單 → 他看得到「所有會議」且有完整開會權限（標完成/追蹤/刪除），跟 Aaron 一樣；
-// 但分頁只有「會議」+「我的」（不看總覽/任務），分頁權限在 unlockAdmin 控制。
-const RESTRICTED_ADMINS = { 'Solo': '高雄團隊會議', 'Jax': '高雄團隊會議', '正洋': 'NID Base+例行會議', '謝明倢': 'NID KIDS例行會議' };
+// Aaron（總管理者）密碼寫死在這；其餘合夥人帳號一律從 Google Sheet「合夥人名單」讀進來
+const ADMIN_ACCOUNTS = { 'Aaron': 'nid2026' }; // ← Aaron 密碼，可自行修改
+// 受限身分：只看得到指定那一本會議（可看＋可自己記，不能標完成/刪除）；由合夥人名單「對應會議」欄決定
+const RESTRICTED_ADMINS = {};
 function restrictedKey() { return RESTRICTED_ADMINS[currentAdmin] || null; }
+let partners = []; // 從 Sheet 讀來的合夥人帳號 [{name,password,meeting}]
+// 依 Sheet 的合夥人名單重建帳號與權限對應
+function applyPartners() {
+  Object.keys(ADMIN_ACCOUNTS).forEach(k => { if (k !== 'Aaron') delete ADMIN_ACCOUNTS[k]; });
+  Object.keys(RESTRICTED_ADMINS).forEach(k => delete RESTRICTED_ADMINS[k]);
+  partners.forEach(p => {
+    if (!p.name) return;
+    ADMIN_ACCOUNTS[p.name] = p.password || '';
+    const mtg = (p.meeting || '').trim();
+    if (mtg && mtg !== '全部') RESTRICTED_ADMINS[p.name] = mtg; // 空白或「全部」= 看所有會議（如 Jerry）
+  });
+  populateAdminUserSelect();
+}
+function populateAdminUserSelect() {
+  const sel = document.getElementById('admin-user');
+  if (!sel) return;
+  const prev = sel.value;
+  let html = '<option value="Aaron">Aaron</option>';
+  partners.forEach(p => {
+    if (!p.name) return;
+    const tag = (p.meeting && p.meeting !== '全部') ? '（' + p.meeting.replace('例行會議','').replace('團隊會議','') + '）' : '';
+    html += `<option value="${p.name}">${p.name}${tag}</option>`;
+  });
+  sel.innerHTML = html;
+  if (prev) sel.value = prev;
+}
 let currentAdmin = '';
 let calEvents = [];
 const adminCal = {}, myCal = {}, evCal = {}, logCal = {}; // 月曆檢視目前顯示的年/月
@@ -1386,7 +1406,7 @@ async function loadAllData() {
 
   setLoadingState(true);
   try {
-    const [repRes, todRes, memRes, mtRes, cfgRes, noteRes, helpRes, evRes] = await Promise.all([
+    const [repRes, todRes, memRes, mtRes, cfgRes, noteRes, helpRes, evRes, parRes] = await Promise.all([
       apiFetch('getReports'),
       apiFetch('getTodos'),
       apiFetch('getMembers'),
@@ -1394,12 +1414,14 @@ async function loadAllData() {
       apiFetch('getMeetingConfigs'),
       apiFetch('getNotes'),
       apiFetch('getHelps'),
-      apiFetch('getCalendarEvents')
+      apiFetch('getCalendarEvents'),
+      apiFetch('getPartners')
     ]);
     if (repRes.success) reports = repRes.data.map((r, i) => ({ ...r, id: r.id ? r.id.toString() : 'r'+i, date: normalizeDate(r.date) }));
     if (todRes.success) todos = todRes.data.map(t => ({ ...t, id: t.id.toString(), deadline: normalizeDate(t.deadline), completedDate: t.completedDate ? normalizeDate(t.completedDate) : null, source: t.source || '', handoff: t.handoff || '', reschedule: t.reschedule || '' }));
     if (memRes && memRes.success) { members = memRes.data || []; try { localStorage.setItem('nid_members', JSON.stringify(members)); } catch(e) {} }
     if (evRes && evRes.success) calEvents = evRes.data || [];
+    if (parRes && parRes.success) { partners = parRes.data || []; applyPartners(); }
     if (mtRes && mtRes.success) meetings = (mtRes.data || []).map(m => ({ ...m, id: m.id.toString(), date: normalizeDate(m.date), doneDate: m.doneDate ? normalizeDate(m.doneDate) : '', by: m.by || '' }));
     if (cfgRes && cfgRes.success) meetingConfigs = cfgRes.data || [];
     if (noteRes && noteRes.success) notes = (noteRes.data || []).map(n => ({ ...n, id: n.id.toString(), date: normalizeDate(n.date) }));
