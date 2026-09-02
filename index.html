@@ -1022,7 +1022,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <button class="filter-btn" data-tab="meetings" onclick="switchAdminTab('meetings',this)">📝 會議</button>
           <button class="filter-btn" data-tab="tasks" onclick="switchAdminTab('tasks',this)">📋 任務</button>
           <button class="filter-btn" data-tab="stats" onclick="switchAdminTab('stats',this)">📈 統計</button>
-          <button class="filter-btn" data-tab="calendar" onclick="switchAdminTab('calendar',this)">🗓 行事曆</button>
           <button class="filter-btn" data-tab="aaron" onclick="switchAdminTab('aaron',this)">🏷 我的</button>
           <button class="filter-btn" style="margin-left:auto" onclick="adminLogout()">⇄ 切換身分</button>
         </div>
@@ -1057,6 +1056,18 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <div class="card">
           <div class="card-title">本月回報統計</div>
           <div id="overview-month-stats"><div class="empty"><span class="empty-icon">📊</span>尚無資料</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">回報月曆 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">點某一天看當天全員回報內容</span></div>
+          <div class="cal-head">
+            <button class="btn btn-sm" onclick="calMove('admin',-1)">‹ 上個月</button>
+            <div class="cal-title" id="admin-cal-title"></div>
+            <button class="btn btn-sm" onclick="calMove('admin',1)">下個月 ›</button>
+          </div>
+          <div class="cal-weekhead"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+          <div class="cal-grid" id="admin-cal-grid"></div>
+          <div id="admin-cal-detail" class="cal-detail"></div>
         </div>
 
         <div class="card">
@@ -1169,20 +1180,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </div>
         </div>
 
-        <!-- ── 分頁：行事曆（回報月曆）── -->
-        <div id="admin-tab-calendar" class="admin-tab" style="display:none">
-        <div class="card">
-          <div class="card-title">回報月曆 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">點某一天看當天全員回報內容</span></div>
-          <div class="cal-head">
-            <button class="btn btn-sm" onclick="calMove('admin',-1)">‹ 上個月</button>
-            <div class="cal-title" id="admin-cal-title"></div>
-            <button class="btn btn-sm" onclick="calMove('admin',1)">下個月 ›</button>
-          </div>
-          <div class="cal-weekhead"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
-          <div class="cal-grid" id="admin-cal-grid"></div>
-          <div id="admin-cal-detail" class="cal-detail"></div>
-        </div>
-        </div>
 
         <!-- ── 分頁：我的（Aaron 專區）── -->
         <div id="admin-tab-aaron" class="admin-tab" style="display:none">
@@ -1367,7 +1364,7 @@ function switchAdminTab(name, btn) {
     btn.parentElement.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
   }
-  if (name === 'calendar') renderCalendarFor('admin');
+  if (name === 'overview') renderCalendarFor('admin');
 }
 let isLoading = false;
 
@@ -2686,7 +2683,7 @@ function unlockAdmin() {
 
   // 依身分顯示分頁
   let allowed;
-  if (user === 'Aaron') allowed = ['overview','meetings','tasks','stats','calendar','aaron'];
+  if (user === 'Aaron') allowed = ['overview','meetings','tasks','stats','aaron'];
   else                  allowed = ['meetings','aaron']; // 所有合夥人：自己品牌會議 + 「我的」(日誌/任務)
   document.querySelectorAll('#admin-tab-bar .filter-btn').forEach(b => {
     b.style.display = allowed.includes(b.getAttribute('data-tab')) ? '' : 'none';
@@ -2867,6 +2864,7 @@ function renderMeetingHistory() {
 
 // ── overview ──
 function renderOverview() {
+  renderCalendarFor('admin'); // 回報月曆（已併入總覽）
   const todayStr = today();
   const todayReps = reports.filter(r => normalizeDate(r.date) === todayStr);
 
