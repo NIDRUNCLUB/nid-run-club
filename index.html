@@ -1303,19 +1303,26 @@ let adminUnlocked = false;
 let brands = [], alogs = [], atodos = [], aaronLoadedFor = '';
 // Aaron（總管理者）密碼寫死在這；其餘合夥人帳號一律從 Google Sheet「合夥人名單」讀進來
 const ADMIN_ACCOUNTS = { 'Aaron': 'nid2026' }; // ← Aaron 密碼，可自行修改
-// 受限身分：只看得到指定那一本會議（可看＋可自己記，不能標完成/刪除）；由合夥人名單「對應會議」欄決定
-const RESTRICTED_ADMINS = {};
-function restrictedKey() { return RESTRICTED_ADMINS[currentAdmin] || null; }
-let partners = []; // 從 Sheet 讀來的合夥人帳號 [{name,password,meeting}]
+// 受限身分：看得到哪些會議（可為多本）；由合夥人名單「對應會議」欄決定（空白或「全部」= 所有會議）
+const RESTRICTED_ADMINS = {};       // name -> [會議key...]（有值＝限定範圍）
+const MEETING_FULL_POWER = {};      // name -> true（可標完成/追蹤/刪除）
+function restrictedKeys() { return RESTRICTED_ADMINS[currentAdmin] || null; } // 回傳陣列或 null(=全部)
+// 是否有完整開會權限（顯示 完成/追蹤/刪除 按鈕）：Aaron、看全部者、或 Sheet 標「開會權限=完整」者
+function canManageMeetings() { return currentAdmin === 'Aaron' || !restrictedKeys() || !!MEETING_FULL_POWER[currentAdmin]; }
+let partners = []; // 從 Sheet 讀來的合夥人帳號 [{name,password,meeting,power}]
 // 依 Sheet 的合夥人名單重建帳號與權限對應
 function applyPartners() {
   Object.keys(ADMIN_ACCOUNTS).forEach(k => { if (k !== 'Aaron') delete ADMIN_ACCOUNTS[k]; });
   Object.keys(RESTRICTED_ADMINS).forEach(k => delete RESTRICTED_ADMINS[k]);
+  Object.keys(MEETING_FULL_POWER).forEach(k => delete MEETING_FULL_POWER[k]);
   partners.forEach(p => {
     if (!p.name) return;
     ADMIN_ACCOUNTS[p.name] = p.password || '';
     const mtg = (p.meeting || '').trim();
-    if (mtg && mtg !== '全部') RESTRICTED_ADMINS[p.name] = mtg; // 空白或「全部」= 看所有會議（如 Jerry）
+    if (mtg && mtg !== '全部') {
+      RESTRICTED_ADMINS[p.name] = mtg.split(/[、,，]/).map(s => s.trim()).filter(Boolean); // 可多本
+    }
+    if ((p.power || '').trim() === '完整') MEETING_FULL_POWER[p.name] = true;
   });
   populateAdminUserSelect();
 }
@@ -1326,8 +1333,7 @@ function populateAdminUserSelect() {
   let html = '<option value="Aaron">Aaron</option>';
   partners.forEach(p => {
     if (!p.name) return;
-    const tag = (p.meeting && p.meeting !== '全部') ? '（' + p.meeting.replace('例行會議','').replace('團隊會議','') + '）' : '';
-    html += `<option value="${p.name}">${p.name}${tag}</option>`;
+    html += `<option value="${p.name}">${p.name}</option>`;
   });
   sel.innerHTML = html;
   if (prev) sel.value = prev;
@@ -1360,8 +1366,8 @@ function populateMeetingSelect() {
   const sel = document.getElementById('mt-team');
   if (!sel) return;
   let cfgs = getMeetingsConfig();
-  const rk = restrictedKey();
-  if (rk) cfgs = cfgs.filter(c => c.key === rk);
+  const rk = restrictedKeys();
+  if (rk) cfgs = cfgs.filter(c => rk.includes(c.key));
   sel.innerHTML = cfgs.map(c =>
     `<option value="${c.key}">${c.label}${c.leads ? '（' + c.leads + '）' : ''}</option>`
   ).join('');
@@ -2791,9 +2797,9 @@ function renderMeetings() {
   if (!el) return;
   let out = '';
   let cfgList = getMeetingsConfig();
-  const rk = restrictedKey();
-  const jerryView = !!rk; // 受限身分：唯讀 + 可自己記，不顯示完成/追蹤/刪除按鈕
-  if (rk) cfgList = cfgList.filter(c => c.key === rk);
+  const rk = restrictedKeys();
+  const jerryView = !canManageMeetings(); // 沒有完整權限者：唯讀 + 可自己記，不顯示完成/追蹤/刪除按鈕
+  if (rk) cfgList = cfgList.filter(c => rk.includes(c.key));
   cfgList.forEach(cfg => {
     const tracking = meetings.filter(m => m.team === cfg.key && m.status === '追蹤中');
     const pending  = meetings.filter(m => m.team === cfg.key && m.status === '待討論');
@@ -2850,8 +2856,8 @@ function populateHistoryFilter() {
   if (!sel) return;
   const current = sel.value;
   let cfgs = getMeetingsConfig();
-  const rk = restrictedKey();
-  if (rk) cfgs = cfgs.filter(c => c.key === rk);
+  const rk = restrictedKeys();
+  if (rk) cfgs = cfgs.filter(c => rk.includes(c.key));
   sel.innerHTML = (rk ? '' : '<option value="">全部會議</option>') + cfgs.map(c =>
     `<option value="${c.key}">${c.label}</option>`
   ).join('');
@@ -2863,8 +2869,8 @@ function renderMeetingHistory() {
   const countEl = document.getElementById('mh-count');
   if (!el) return;
   let archived = meetings.filter(m => m.status === '已討論' || m.status === '已結束');
-  const rk = restrictedKey();
-  if (rk) archived = archived.filter(m => m.team === rk);
+  const rk = restrictedKeys();
+  if (rk) archived = archived.filter(m => rk.includes(m.team));
   if (countEl) countEl.textContent = `(${archived.length})`;
   const filter = document.getElementById('mh-filter') ? document.getElementById('mh-filter').value : '';
   let list = filter ? archived.filter(m => m.team === filter) : archived;
