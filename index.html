@@ -746,6 +746,24 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 }
 .mob-btn.active { color: var(--yellow); }
 .mob-icon { font-size: 18px; line-height: 1; }
+
+/* ── 回報月曆 ── */
+.cal-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+.cal-title { font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:700; letter-spacing:0.04em; color:var(--white); }
+.cal-weekhead { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:6px; }
+.cal-weekhead span { text-align:center; font-size:11px; color:var(--gray1); font-weight:700; }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+.cal-cell { min-height:58px; background:var(--black2); border:1px solid var(--black5); border-radius:8px; padding:5px 6px; font-size:11px; color:var(--gray1); display:flex; flex-direction:column; gap:3px; }
+.cal-cell.empty { background:transparent; border-color:transparent; }
+.cal-cell.has { cursor:pointer; border-color:rgba(255,229,0,0.35); }
+.cal-cell.has:hover { background:var(--black3); }
+.cal-cell.today { outline:2px solid var(--yellow); outline-offset:-2px; }
+.cal-cell.sel { background:var(--yellow); color:#000; }
+.cal-cell.sel .cal-num, .cal-cell.sel .cal-tag { color:#000; }
+.cal-num { font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; color:var(--white); }
+.cal-tag { font-size:10px; color:var(--yellow); font-weight:700; line-height:1.25; overflow:hidden; }
+.cal-detail { margin-top:16px; }
+@media (max-width:640px){ .cal-cell { min-height:46px; padding:4px; } .cal-tag { display:none; } }
 </style>
 </head>
 <body>
@@ -801,17 +819,21 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div id="page-mytodos" class="page active">
       <div class="page-header">
         <div class="page-title">工作回報<span> 及任務</span></div>
-        <div class="page-subtitle">輸入你的名字，查看你的待辦任務和回報紀錄</div>
+        <div class="page-subtitle">選擇你的名字，查看你的待辦任務和回報紀錄</div>
+      </div>
+
+      <!-- 近期活動（同步 NID Google 行事曆） -->
+      <div class="card" id="events-card" style="display:none;border-color:rgba(255,229,0,0.28);margin-bottom:20px">
+        <div class="card-title">📅 近期活動 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">未來兩週 NID 的活動、報名、團購提醒</span></div>
+        <div id="events-list"></div>
       </div>
 
       <div class="name-gate" id="name-gate">
-        <div class="name-gate-title">你是誰？</div>
-        <div class="name-gate-sub">輸入姓名後即可看到你的待辦任務與回報紀錄</div>
+        <div class="name-gate-sub" style="margin-top:4px">從下方選單選你的名字，就能看到你的待辦任務與回報紀錄</div>
         <div class="name-gate-row" style="max-width:400px">
-          <select class="form-select" id="my-name-select" style="flex:1">
+          <select class="form-select" id="my-name-select" style="flex:1" onchange="if(this.value==='__reload__'){this.value='';bootMembers(true);}">
             <option value="">載入名單中…</option>
           </select>
-          <input class="form-input" type="text" id="my-name-input" placeholder="輸入你的姓名" onkeydown="if(event.key==='Enter' && !event.isComposing && event.keyCode!==229)loadMyTodos()" style="display:none;flex:1">
           <input class="form-input" type="password" id="my-pass" placeholder="密碼" style="max-width:96px" onkeydown="if(event.key==='Enter')loadMyTodos()">
           <button class="btn btn-primary" onclick="loadMyTodos()">確認 →</button>
         </div>
@@ -824,6 +846,11 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <span id="my-chip-warn" class="my-stat-chip badge-warn" style="display:none"></span>
           <span id="my-chip-ok"   class="my-stat-chip badge-ok" style="display:none"></span>
           <button class="btn btn-ghost btn-sm" onclick="resetMyName()" style="margin-left:8px">切換</button>
+        </div>
+
+        <!-- 今日未回報提醒 -->
+        <div id="report-reminder" onclick="document.getElementById('r-done').focus()" style="display:none;cursor:pointer;background:var(--yellow);color:#000;font-weight:700;border-radius:12px;padding:14px 18px;margin-bottom:16px">
+          📢 今天還沒回報喔！記得填寫下方「今日完成事項」👇
         </div>
 
         <!-- 遊戲化統計 -->
@@ -928,6 +955,21 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <div id="my-done-list" style="display:none"></div>
         </div>
 
+        <!-- 我的回報月曆 -->
+        <div style="margin-top:28px">
+          <div class="card-title" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray1);margin-bottom:16px;display:flex;align-items:center;gap:10px">回報月曆 <span style="flex:1;height:1px;background:var(--black5);display:block"></span></div>
+          <div class="card">
+            <div class="cal-head">
+              <button class="btn btn-sm" onclick="calMove('my',-1)">‹ 上個月</button>
+              <div class="cal-title" id="my-cal-title"></div>
+              <button class="btn btn-sm" onclick="calMove('my',1)">下個月 ›</button>
+            </div>
+            <div class="cal-weekhead"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+            <div class="cal-grid" id="my-cal-grid"></div>
+            <div id="my-cal-detail" class="cal-detail"></div>
+          </div>
+        </div>
+
         <!-- 我的回報紀錄 -->
         <div style="margin-top:28px">
           <div class="card-title" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray1);margin-bottom:16px;display:flex;align-items:center;gap:10px">我的回報紀錄 <span style="flex:1;height:1px;background:var(--black5);display:block"></span></div>
@@ -951,6 +993,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <select class="form-select" id="admin-user" style="max-width:110px">
             <option value="Aaron">Aaron</option>
             <option value="Jerry">Jerry</option>
+            <option value="Solo">Solo（高雄）</option>
+            <option value="Jax">Jax（高雄）</option>
+            <option value="正洋">正洋（NID Base+）</option>
+            <option value="謝明倢">謝明倢（NID KIDS）</option>
           </select>
           <input class="form-input" type="password" id="admin-pass" placeholder="密碼" onkeydown="if(event.key==='Enter')unlockAdmin()" style="flex:1">
           <button class="btn btn-primary" onclick="unlockAdmin()">解鎖 →</button>
@@ -966,6 +1012,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <button class="filter-btn" data-tab="meetings" onclick="switchAdminTab('meetings',this)">📝 會議</button>
           <button class="filter-btn" data-tab="tasks" onclick="switchAdminTab('tasks',this)">📋 任務</button>
           <button class="filter-btn" data-tab="stats" onclick="switchAdminTab('stats',this)">📈 統計</button>
+          <button class="filter-btn" data-tab="calendar" onclick="switchAdminTab('calendar',this)">🗓 行事曆</button>
           <button class="filter-btn" data-tab="aaron" onclick="switchAdminTab('aaron',this)">🏷 我的</button>
           <button class="filter-btn" style="margin-left:auto" onclick="adminLogout()">⇄ 切換身分</button>
         </div>
@@ -1112,6 +1159,21 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </div>
         </div>
 
+        <!-- ── 分頁：行事曆（回報月曆）── -->
+        <div id="admin-tab-calendar" class="admin-tab" style="display:none">
+        <div class="card">
+          <div class="card-title">回報月曆 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">點某一天看當天全員回報內容</span></div>
+          <div class="cal-head">
+            <button class="btn btn-sm" onclick="calMove('admin',-1)">‹ 上個月</button>
+            <div class="cal-title" id="admin-cal-title"></div>
+            <button class="btn btn-sm" onclick="calMove('admin',1)">下個月 ›</button>
+          </div>
+          <div class="cal-weekhead"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+          <div class="cal-grid" id="admin-cal-grid"></div>
+          <div id="admin-cal-detail" class="cal-detail"></div>
+        </div>
+        </div>
+
         <!-- ── 分頁：我的（Aaron 專區）── -->
         <div id="admin-tab-aaron" class="admin-tab" style="display:none">
 
@@ -1240,8 +1302,13 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbxasth4ch9ANFp8zk-tgjeF
 let reports = [], todos = [], members = [], meetings = [], notes = [], helps = [], myName = '', myTeam = '', currentFilter = 'all';
 let adminUnlocked = false;
 let brands = [], alogs = [], atodos = [], aaronLoadedFor = '';
-const ADMIN_ACCOUNTS = { 'Aaron': 'nid2026', 'Jerry': 'kaiwei2026' }; // ← 管理密碼，可自行修改
+const ADMIN_ACCOUNTS = { 'Aaron': 'nid2026', 'Jerry': 'kaiwei2026', 'Solo': 'solo2026', 'Jax': 'jax2026', '正洋': 'base2026', '謝明倢': 'kids2026' }; // ← 管理密碼，可自行修改
+// 受限身分：只看得到指定那一本會議（可看＋可自己記，不能標完成/刪除）
+const RESTRICTED_ADMINS = { 'Jerry': '凱為例行會議', 'Solo': '高雄團隊會議', 'Jax': '高雄團隊會議', '正洋': 'NID Base+例行會議', '謝明倢': 'NID KIDS例行會議' };
+function restrictedKey() { return RESTRICTED_ADMINS[currentAdmin] || null; }
 let currentAdmin = '';
+let calEvents = [];
+const adminCal = {}, myCal = {}; // 月曆檢視目前顯示的年/月
 const DEFAULT_MEETINGS = [
   { key: '行政團隊',            leads: '竺均、小粘' },
   { key: '活動團隊',            leads: '阿丞' },
@@ -1249,7 +1316,7 @@ const DEFAULT_MEETINGS = [
   { key: '高雄團隊會議',         leads: '' },
   { key: '凱為例行會議',         leads: '' },
   { key: 'NID Base+例行會議',    leads: '' },
-  { key: 'NID For Kids例行會議', leads: '' },
+  { key: 'NID KIDS例行會議', leads: '' },
   { key: 'NID Base+小編會議',    leads: '' }
 ];
 let meetingConfigs = [];
@@ -1267,7 +1334,8 @@ function populateMeetingSelect() {
   const sel = document.getElementById('mt-team');
   if (!sel) return;
   let cfgs = getMeetingsConfig();
-  if (currentAdmin === 'Jerry') cfgs = cfgs.filter(c => c.key === '凱為例行會議');
+  const rk = restrictedKey();
+  if (rk) cfgs = cfgs.filter(c => c.key === rk);
   sel.innerHTML = cfgs.map(c =>
     `<option value="${c.key}">${c.label}${c.leads ? '（' + c.leads + '）' : ''}</option>`
   ).join('');
@@ -1280,6 +1348,7 @@ function switchAdminTab(name, btn) {
     btn.parentElement.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
   }
+  if (name === 'calendar') renderCalendarFor('admin');
 }
 let isLoading = false;
 
@@ -1311,18 +1380,20 @@ async function loadAllData() {
 
   setLoadingState(true);
   try {
-    const [repRes, todRes, memRes, mtRes, cfgRes, noteRes, helpRes] = await Promise.all([
+    const [repRes, todRes, memRes, mtRes, cfgRes, noteRes, helpRes, evRes] = await Promise.all([
       apiFetch('getReports'),
       apiFetch('getTodos'),
       apiFetch('getMembers'),
       apiFetch('getMeetings'),
       apiFetch('getMeetingConfigs'),
       apiFetch('getNotes'),
-      apiFetch('getHelps')
+      apiFetch('getHelps'),
+      apiFetch('getCalendarEvents')
     ]);
     if (repRes.success) reports = repRes.data.map((r, i) => ({ ...r, id: r.id ? r.id.toString() : 'r'+i, date: normalizeDate(r.date) }));
     if (todRes.success) todos = todRes.data.map(t => ({ ...t, id: t.id.toString(), deadline: normalizeDate(t.deadline), completedDate: t.completedDate ? normalizeDate(t.completedDate) : null, source: t.source || '', handoff: t.handoff || '', reschedule: t.reschedule || '' }));
-    if (memRes && memRes.success) members = memRes.data || [];
+    if (memRes && memRes.success) { members = memRes.data || []; try { localStorage.setItem('nid_members', JSON.stringify(members)); } catch(e) {} }
+    if (evRes && evRes.success) calEvents = evRes.data || [];
     if (mtRes && mtRes.success) meetings = (mtRes.data || []).map(m => ({ ...m, id: m.id.toString(), date: normalizeDate(m.date), doneDate: m.doneDate ? normalizeDate(m.doneDate) : '', by: m.by || '' }));
     if (cfgRes && cfgRes.success) meetingConfigs = cfgRes.data || [];
     if (noteRes && noteRes.success) notes = (noteRes.data || []).map(n => ({ ...n, id: n.id.toString(), date: normalizeDate(n.date) }));
@@ -1330,11 +1401,13 @@ async function loadAllData() {
     updateHelpBadge();
     populateNameSelect();
     populateMeetingSelect();
+    renderEvents();
     if (adminUnlocked) renderMeetings();
+    if (adminUnlocked && currentAdmin === 'Aaron') renderCalendarFor('admin');
     renderReports();
     renderAllTodos();
     updateMetrics();
-    if (myName) { renderMyTodos(); renderMyReports(); renderMyMeetings(); renderMyNotes(); renderMyHelps(); renderMyStats(); }
+    if (myName) { renderMyTodos(); renderMyReports(); renderMyMeetings(); renderMyNotes(); renderMyHelps(); renderMyStats(); renderReportReminder(); renderCalendarFor('my'); }
   } catch(e) {
     console.error(e);
   }
@@ -1449,30 +1522,50 @@ function switchPage(id, btn) {
 // ── my todos ──
 function populateNameSelect() {
   const sel = document.getElementById('my-name-select');
-  const txt = document.getElementById('my-name-input');
-  if (!sel || !txt) return;
+  if (!sel) return;
+  const prev = sel.value;
   if (members.length) {
     sel.innerHTML = '<option value="">選擇你的名字</option>' +
       members.map(m => `<option value="${m.name}">${m.name}（${m.team || '未分組'}）</option>`).join('');
-    sel.style.display = '';
-    txt.style.display = 'none';
+    if (prev && prev !== '__reload__') sel.value = prev; // 背景更新時保留使用者已選的名字
   } else {
-    sel.style.display = 'none';
-    txt.style.display = '';
+    // 名單還沒載到：永遠維持下拉（不退回打字），提供重新載入選項
+    sel.innerHTML = '<option value="">載入名單中…</option>' +
+      '<option value="__reload__">⟳ 沒看到名字？點此重新載入</option>';
   }
+  sel.style.display = '';
+}
+
+// ── 名單優先載入（先把下拉名單長出來，不用等其他資料；失敗會自動重試）──
+async function bootMembers(manual) {
+  // 先用瀏覽器快取瞬間顯示名單（若有）
+  try {
+    const cached = JSON.parse(localStorage.getItem('nid_members') || '[]');
+    if (Array.isArray(cached) && cached.length) { members = cached; populateNameSelect(); }
+  } catch(e) {}
+  if (API_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return;
+  if (manual) showToast('重新載入名單中…');
+  // 最多試 3 次，避免 Apps Script 冷啟動或偶發失敗就退場
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await apiFetch('getMembers');
+    if (res && res.success && Array.isArray(res.data) && res.data.length) {
+      members = res.data;
+      populateNameSelect();
+      try { localStorage.setItem('nid_members', JSON.stringify(members)); } catch(e) {}
+      return;
+    }
+    await new Promise(r => setTimeout(r, 1200));
+  }
+  populateNameSelect(); // 三次都失敗：保持下拉 + 重新載入選項
+  if (manual) showToast('名單還是載不到，請確認後端是否正常');
 }
 
 function loadMyTodos() {
   const sel = document.getElementById('my-name-select');
-  const txt = document.getElementById('my-name-input');
-  let n = '';
-  if (members.length && sel && sel.style.display !== 'none') {
-    n = sel.value;
-    if (!n) { showToast('請選擇你的名字'); return; }
-  } else {
-    n = txt.value.trim();
-    if (!n) { showToast('請輸入你的姓名'); return; }
-  }
+  const n = sel ? sel.value : '';
+  if (n === '__reload__') { sel.value = ''; bootMembers(true); return; }
+  if (!members.length) { showToast('名單還在載入，請稍候再選'); bootMembers(true); return; }
+  if (!n) { showToast('請選擇你的名字'); return; }
   const member = members.find(m => m.name === n);
   if (member && member.password) {
     const passEl = document.getElementById('my-pass');
@@ -1500,11 +1593,12 @@ function loadMyTodos() {
   renderMyHelps();
   renderMyStats();
   renderReportTasks();
+  renderReportReminder();
+  renderCalendarFor('my');
 }
 function resetMyName() {
   myName = '';
   myTeam = '';
-  document.getElementById('my-name-input').value = '';
   const sel = document.getElementById('my-name-select');
   if (sel) sel.value = '';
   const mp = document.getElementById('my-pass');
@@ -1884,6 +1978,115 @@ function renderMyReports() {
     </div>`).join('');
 }
 
+// ── 今日未回報提醒 ──
+function renderReportReminder() {
+  const el = document.getElementById('report-reminder');
+  if (!el || !myName) return;
+  const me = members.find(m => m.name === myName);
+  const myDays = memberDays(me);
+  const t = today();
+  const isReportDay = myDays.includes(weekdayOf(t));
+  const reportedToday = reports.some(r => r.name === myName && normalizeDate(r.date) === t);
+  el.style.display = (isReportDay && !reportedToday) ? 'block' : 'none';
+}
+
+// ── 近期活動（Google 行事曆）──
+const WD_CH = ['日','一','二','三','四','五','六'];
+function renderEvents() {
+  const card = document.getElementById('events-card');
+  const el = document.getElementById('events-list');
+  if (!card || !el) return;
+  if (!calEvents.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  el.innerHTML = calEvents.map(ev => {
+    const sd = ev.startDate ? normalizeDate(ev.startDate) : '';
+    const md = sd ? sd.slice(5).replace('-', '/') : '';
+    const wd = sd ? '（' + WD_CH[parseLocalDate(sd).getDay()] + '）' : '';
+    const du = sd ? daysUntil(sd) : 99;
+    const soon = du <= 3;
+    const time = ev.allDay ? '整天' : (ev.start ? ev.start.slice(11) : '');
+    return `<div class="todo-item ${soon ? 'warn' : 'ok'}" style="padding:10px 14px">
+      <div class="todo-item-content">
+        <div class="todo-item-title" style="font-size:13px">${soon ? '🔥' : '📌'} ${ev.title || '(未命名活動)'}</div>
+        <div class="todo-item-meta">${md}${wd} ${time}${ev.location ? ' · ' + ev.location : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── 回報月曆 ──
+function calMove(which, delta) {
+  const st = which === 'admin' ? adminCal : myCal;
+  let m = st.m + delta, y = st.y;
+  if (m < 0) { m = 11; y--; }
+  if (m > 11) { m = 0; y++; }
+  st.y = y; st.m = m;
+  renderCalendarFor(which);
+}
+function renderCalendarFor(which) {
+  const isAdmin = which === 'admin';
+  const st = isAdmin ? adminCal : myCal;
+  const gridEl = document.getElementById(isAdmin ? 'admin-cal-grid' : 'my-cal-grid');
+  const titleEl = document.getElementById(isAdmin ? 'admin-cal-title' : 'my-cal-title');
+  const detailEl = document.getElementById(isAdmin ? 'admin-cal-detail' : 'my-cal-detail');
+  if (!gridEl || !titleEl) return;
+  if (st.y === undefined) { const t = today().split('-').map(Number); st.y = t[0]; st.m = t[1] - 1; }
+  const data = isAdmin ? reports : reports.filter(r => r.name === myName);
+  // 依日期分組
+  const byDate = {};
+  data.forEach(r => {
+    const d = normalizeDate(r.date);
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(r);
+  });
+  titleEl.textContent = st.y + ' 年 ' + (st.m + 1) + ' 月';
+  const first = new Date(st.y, st.m, 1);
+  const startPad = first.getDay(); // 0=Sun
+  const daysInMonth = new Date(st.y, st.m + 1, 0).getDate();
+  const tStr = today();
+  let cells = '';
+  for (let i = 0; i < startPad; i++) cells += '<div class="cal-cell empty"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = st.y + '-' + String(st.m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    const list = byDate[ds] || [];
+    const cls = ['cal-cell'];
+    if (list.length) cls.push('has');
+    if (ds === tStr) cls.push('today');
+    if (st.sel === ds) cls.push('sel');
+    let tag = '';
+    if (list.length) {
+      tag = isAdmin
+        ? `<span class="cal-tag">${list.length} 人</span>`
+        : `<span class="cal-tag">✓ 已回報</span>`;
+    }
+    const click = list.length ? ` onclick="calPick('${which}','${ds}')"` : '';
+    cells += `<div class="${cls.join(' ')}"${click}><span class="cal-num">${d}</span>${tag}</div>`;
+  }
+  gridEl.innerHTML = cells;
+  if (detailEl && st.sel && byDate[st.sel]) renderCalDetail(detailEl, st.sel, byDate[st.sel], isAdmin);
+  else if (detailEl) detailEl.innerHTML = '<div style="font-size:12px;color:var(--gray2);padding:8px 2px">點上方有標記的日期，看當天回報內容</div>';
+}
+function calPick(which, ds) {
+  const st = which === 'admin' ? adminCal : myCal;
+  st.sel = (st.sel === ds) ? '' : ds;
+  renderCalendarFor(which);
+}
+function renderCalDetail(el, ds, list, isAdmin) {
+  const md = ds.slice(5).replace('-', '/');
+  const wd = WD_CH[parseLocalDate(ds).getDay()];
+  el.innerHTML = `<div class="card-title" style="margin-top:6px">${md}（${wd}） 回報內容</div>` +
+    list.map(r => `
+      <div class="report-item">
+        <div class="report-header">
+          ${isAdmin ? `<span class="report-name">${r.name}</span>` : ''}
+          ${teamBadge(r.team)}
+          ${r.block && r.block !== '無' ? '<span class="badge badge-warn">需支援</span>' : ''}
+        </div>
+        <div class="report-row"><span class="report-key">完成</span><span>${r.done || '－'}</span></div>
+        ${r.block && r.block !== '無' ? `<div class="report-row report-block"><span class="report-key">問題</span><span>${r.block}</span></div>` : ''}
+      </div>`).join('');
+}
+
 function toggleDoneList() {
   const dl = document.getElementById('my-done-list');
   const arr = document.getElementById('done-arrow');
@@ -1948,7 +2151,7 @@ async function submitReport() {
     btn.removeAttribute('data-edit-id');
     document.getElementById('r-done').value = '';
     renderReports(); updateMetrics();
-    if (myName) { renderMyReports(); renderMyStats(); }
+    if (myName) { renderMyReports(); renderMyStats(); renderReportReminder(); renderCalendarFor('my'); }
     showToast('回報已更新 ✓');
     if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
       const res = await apiFetch('editReport', { id: editId, name, team, done, plan, block });
@@ -1964,7 +2167,7 @@ async function submitReport() {
 
     document.getElementById('r-done').value = '';
     renderReports(); updateMetrics();
-    if (myName) { renderMyReports(); renderMyStats(); }
+    if (myName) { renderMyReports(); renderMyStats(); renderReportReminder(); renderCalendarFor('my'); }
     showToast(checkedIds.length ? `回報已提交，${checkedIds.length} 項任務標記完成 ✓` : '回報已提交 ✓');
 
     if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
@@ -2154,7 +2357,7 @@ function openPersonalEdit(mode, id) {
   document.getElementById('pe-content-label').textContent = mode === 'atodo' ? '任務名稱' : '內容';
   document.getElementById('pe-content').value = mode === 'atodo' ? item.title : item.content;
   // 品牌選單
-  const list = brands.length ? brands : ['NID RUN CLUB', 'NID Base+', 'NID For Kids', 'NID Running'];
+  const list = brands.length ? brands : ['NID RUN CLUB', 'NID Base+', 'NID KIDS', 'NID Running'];
   const sel = document.getElementById('pe-brand');
   sel.innerHTML = list.map(b => `<option value="${b}">${b}</option>`).join('');
   sel.value = item.brand;
@@ -2218,7 +2421,7 @@ async function loadAaronData() {
 }
 
 function renderABrands() {
-  const list = brands.length ? brands : ['NID RUN CLUB', 'NID Base+', 'NID For Kids', 'NID Running'];
+  const list = brands.length ? brands : ['NID RUN CLUB', 'NID Base+', 'NID KIDS', 'NID Running'];
   const opts = list.map(b => `<option value="${b}">${b}</option>`).join('');
   const s1 = document.getElementById('al-brand');
   const s2 = document.getElementById('at-brand');
@@ -2389,7 +2592,9 @@ function unlockAdmin() {
   document.getElementById('admin-area').style.display = 'block';
 
   // 依身分顯示分頁
-  const allowed = user === 'Aaron' ? ['overview','meetings','tasks','stats','aaron'] : ['meetings','aaron'];
+  let allowed;
+  if (user === 'Aaron') allowed = ['overview','meetings','tasks','stats','calendar','aaron'];
+  else                  allowed = ['meetings','aaron']; // 所有合夥人：自己品牌會議 + 「我的」(日誌/任務)
   document.querySelectorAll('#admin-tab-bar .filter-btn').forEach(b => {
     b.style.display = allowed.includes(b.getAttribute('data-tab')) ? '' : 'none';
   });
@@ -2404,7 +2609,7 @@ function unlockAdmin() {
     renderAllTodos();
   }
   renderMeetings();
-  loadAaronData();
+  if (allowed.includes('aaron')) loadAaronData(); // 只有 Aaron / Jerry 有「我的」專區
 }
 
 // ── 會議清單 ──
@@ -2465,8 +2670,9 @@ function renderMeetings() {
   if (!el) return;
   let out = '';
   let cfgList = getMeetingsConfig();
-  const jerryView = currentAdmin === 'Jerry';
-  if (jerryView) cfgList = cfgList.filter(c => c.key === '凱為例行會議');
+  const rk = restrictedKey();
+  const jerryView = !!rk; // 受限身分：唯讀 + 可自己記，不顯示完成/追蹤/刪除按鈕
+  if (rk) cfgList = cfgList.filter(c => c.key === rk);
   cfgList.forEach(cfg => {
     const tracking = meetings.filter(m => m.team === cfg.key && m.status === '追蹤中');
     const pending  = meetings.filter(m => m.team === cfg.key && m.status === '待討論');
@@ -2523,8 +2729,9 @@ function populateHistoryFilter() {
   if (!sel) return;
   const current = sel.value;
   let cfgs = getMeetingsConfig();
-  if (currentAdmin === 'Jerry') cfgs = cfgs.filter(c => c.key === '凱為例行會議');
-  sel.innerHTML = (currentAdmin === 'Jerry' ? '' : '<option value="">全部會議</option>') + cfgs.map(c =>
+  const rk = restrictedKey();
+  if (rk) cfgs = cfgs.filter(c => c.key === rk);
+  sel.innerHTML = (rk ? '' : '<option value="">全部會議</option>') + cfgs.map(c =>
     `<option value="${c.key}">${c.label}</option>`
   ).join('');
   if (current) sel.value = current;
@@ -2535,7 +2742,8 @@ function renderMeetingHistory() {
   const countEl = document.getElementById('mh-count');
   if (!el) return;
   let archived = meetings.filter(m => m.status === '已討論' || m.status === '已結束');
-  if (currentAdmin === 'Jerry') archived = archived.filter(m => m.team === '凱為例行會議');
+  const rk = restrictedKey();
+  if (rk) archived = archived.filter(m => m.team === rk);
   if (countEl) countEl.textContent = `(${archived.length})`;
   const filter = document.getElementById('mh-filter') ? document.getElementById('mh-filter').value : '';
   let list = filter ? archived.filter(m => m.team === filter) : archived;
@@ -2707,7 +2915,13 @@ function renderStats() {
 })();
 
 // ── 啟動：從 Google Sheet 載入資料 ──
-loadAllData();
+(function initCalStates(){
+  const t = today().split('-').map(Number);
+  adminCal.y = t[0]; adminCal.m = t[1]-1; adminCal.sel = '';
+  myCal.y = t[0];    myCal.m = t[1]-1;    myCal.sel = '';
+})();
+bootMembers();   // 先把「你是誰」名單載出來（不用等其他資料）
+loadAllData();   // 其餘資料背景載入
 renderReports();
 renderAllTodos();
 updateMetrics();
