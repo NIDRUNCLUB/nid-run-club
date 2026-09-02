@@ -882,8 +882,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
         <!-- 本週會議討論事項 -->
         <div class="card" id="my-meeting-card" style="display:none;border-color:rgba(255,229,0,0.25)">
-          <div class="card-title">📌 週二會議討論事項 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">Aaron 預計與你的團隊討論的內容，先看過準備一下</span></div>
+          <div class="card-title">📌 會議討論事項 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">Aaron 要跟你團隊討論的內容；你也可以把想討論的事記上來，Aaron 就會看到</span></div>
           <div id="my-meeting-list"></div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <input class="form-input" type="text" id="my-meeting-input" placeholder="你想在會議上跟 Aaron 討論的事…" style="flex:1" onkeydown="if(event.key==='Enter' && !event.isComposing && event.keyCode!==229)addMyMeeting()">
+            <button class="btn btn-primary" onclick="addMyMeeting()" style="white-space:nowrap">我想討論 +</button>
+          </div>
         </div>
         <!-- 填寫今日回報 -->
         <div class="card">
@@ -1021,7 +1025,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <button class="filter-btn active" data-tab="overview" onclick="switchAdminTab('overview',this)">📊 總覽</button>
           <button class="filter-btn" data-tab="meetings" onclick="switchAdminTab('meetings',this)">📝 會議</button>
           <button class="filter-btn" data-tab="tasks" onclick="switchAdminTab('tasks',this)">📋 任務</button>
-          <button class="filter-btn" data-tab="stats" onclick="switchAdminTab('stats',this)">📈 統計</button>
           <button class="filter-btn" data-tab="aaron" onclick="switchAdminTab('aaron',this)">🏷 我的</button>
           <button class="filter-btn" style="margin-left:auto" onclick="adminLogout()">⇄ 切換身分</button>
         </div>
@@ -1138,10 +1141,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <div id="all-todo-list"></div>
         </div>
 
-        </div>
-
-        <!-- ── 分頁：統計 ── -->
-        <div id="admin-tab-stats" class="admin-tab" style="display:none">
+        <div class="card-title" style="margin-top:28px">任務統計</div>
         <div class="metrics-grid">
           <div class="metric-card">
             <div class="metric-label">總任務數</div>
@@ -1308,7 +1308,9 @@ let adminUnlocked = false;
 let brands = [], alogs = [], atodos = [], aaronLoadedFor = '';
 const ADMIN_ACCOUNTS = { 'Aaron': 'nid2026', 'Jerry': 'kaiwei2026', 'Solo': 'solo2026', 'Jax': 'jax2026', '正洋': 'base2026', '謝明倢': 'kids2026' }; // ← 管理密碼，可自行修改
 // 受限身分：只看得到指定那一本會議（可看＋可自己記，不能標完成/刪除）
-const RESTRICTED_ADMINS = { 'Jerry': '凱為例行會議', 'Solo': '高雄團隊會議', 'Jax': '高雄團隊會議', '正洋': 'NID Base+例行會議', '謝明倢': 'NID KIDS例行會議' };
+// 注意：Jerry 不在此清單 → 他看得到「所有會議」且有完整開會權限（標完成/追蹤/刪除），跟 Aaron 一樣；
+// 但分頁只有「會議」+「我的」（不看總覽/任務），分頁權限在 unlockAdmin 控制。
+const RESTRICTED_ADMINS = { 'Solo': '高雄團隊會議', 'Jax': '高雄團隊會議', '正洋': 'NID Base+例行會議', '謝明倢': 'NID KIDS例行會議' };
 function restrictedKey() { return RESTRICTED_ADMINS[currentAdmin] || null; }
 let currentAdmin = '';
 let calEvents = [];
@@ -1352,6 +1354,7 @@ function switchAdminTab(name, btn) {
     btn.parentElement.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
   }
+  if (name === 'tasks' && currentAdmin === 'Aaron') { renderAllTodos(); renderStats(); }
 }
 let isLoading = false;
 
@@ -1938,24 +1941,43 @@ function renderMyMeetings() {
   if (!myTeam) { card.style.display = 'none'; return; }
   const tracking = meetings.filter(m => m.team === myTeam && m.status === '追蹤中');
   const pending  = meetings.filter(m => m.team === myTeam && m.status === '待討論');
-  if (!tracking.length && !pending.length) { card.style.display = 'none'; return; }
-  card.style.display = 'block';
+  card.style.display = 'block'; // 有團隊就顯示，讓大家能自己記想討論的事
+  if (!tracking.length && !pending.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--gray2);padding:4px 0">目前沒有討論事項。想在會議上跟 Aaron 討論什麼，直接記在下面 👇</div>';
+    return;
+  }
   let out = '';
   out += tracking.map(m => `
     <div class="todo-item warn" style="padding:10px 14px">
       <div class="todo-item-content">
         <div class="todo-item-title" style="font-size:13px"><span class="badge badge-warn" style="margin-right:6px">🔁 持續追蹤</span>${m.content}</div>
-        <div class="todo-item-meta">記於 ${m.date}${m.by && m.by !== currentAdmin ? `（${m.by} 記）` : ''}</div>
+        <div class="todo-item-meta">記於 ${m.date}${m.by ? `（${m.by} 記）` : ''}</div>
       </div>
     </div>`).join('');
   out += pending.map(m => `
     <div class="todo-item" style="border-left-color:var(--black5);padding:10px 14px">
       <div class="todo-item-content">
         <div class="todo-item-title" style="font-size:13px">${m.content}</div>
-        <div class="todo-item-meta">記於 ${m.date}${m.by && m.by !== currentAdmin ? `（${m.by} 記）` : ''}</div>
+        <div class="todo-item-meta">記於 ${m.date}${m.by ? `（${m.by} 記）` : ''}</div>
       </div>
     </div>`).join('');
   el.innerHTML = out;
+}
+
+async function addMyMeeting() {
+  const el = document.getElementById('my-meeting-input');
+  const content = el ? el.value.trim() : '';
+  if (!content) { showToast('請輸入想討論的內容'); return; }
+  if (!myTeam) { showToast('你沒有設定團隊，無法送出'); return; }
+  const entry = { id: Date.now().toString(), team: myTeam, content, status: '待討論', date: today(), by: myName };
+  meetings.push(entry);
+  if (el) el.value = '';
+  renderMyMeetings();
+  showToast('已送出，Aaron 會在後台看到 ✓');
+  if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+    const res = await apiFetch('addMeeting', { id: entry.id, team: myTeam, content, by: myName });
+    if (!res.success) showToast('⚠ 同步失敗，請重新整理');
+  }
 }
 
 function renderMyReports() {
@@ -2667,10 +2689,11 @@ function unlockAdmin() {
   document.getElementById('admin-gate').style.display = 'none';
   document.getElementById('admin-area').style.display = 'block';
 
-  // 依身分顯示分頁
+  // 依身分顯示分頁：只有 Aaron 看得到總覽/任務；Jerry 與其他合夥人只有「會議」+「我的」
+  // （Jerry 不在 RESTRICTED_ADMINS，所以他的「會議」看得到所有會議且有完整開會權限）
   let allowed;
-  if (user === 'Aaron') allowed = ['overview','meetings','tasks','stats','aaron'];
-  else                  allowed = ['meetings','aaron']; // 所有合夥人：自己品牌會議 + 「我的」(日誌/任務)
+  if (user === 'Aaron') allowed = ['overview','meetings','tasks','aaron'];
+  else                  allowed = ['meetings','aaron'];
   document.querySelectorAll('#admin-tab-bar .filter-btn').forEach(b => {
     b.style.display = allowed.includes(b.getAttribute('data-tab')) ? '' : 'none';
   });
@@ -2685,7 +2708,7 @@ function unlockAdmin() {
     renderAllTodos();
   }
   renderMeetings();
-  if (allowed.includes('aaron')) loadAaronData(); // 只有 Aaron / Jerry 有「我的」專區
+  if (allowed.includes('aaron')) loadAaronData(); // Aaron / Jerry / 其他合夥人都有「我的」專區
 }
 
 // ── 會議清單 ──
@@ -2768,7 +2791,7 @@ function renderMeetings() {
       <div class="todo-item warn" style="padding:10px 14px">
         <div class="todo-item-content">
           <div class="todo-item-title" style="font-size:13px"><span class="badge badge-warn" style="margin-right:6px">🔁 追蹤中</span>${m.content}</div>
-          <div class="todo-item-meta">記於 ${m.date}${m.by && m.by !== currentAdmin ? `（${m.by} 記）` : ''}</div>
+          <div class="todo-item-meta">記於 ${m.date}${m.by ? `（${m.by} 記）` : ''}</div>
         </div>
         ${jerryView ? '' : `<button class="btn btn-sm btn-primary" onclick="finishTracking('${m.id}')">完成 ✓</button>
         <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteMeeting('${m.id}')">✕</button>`}
@@ -2778,7 +2801,7 @@ function renderMeetings() {
       <div class="todo-item" style="border-left-color:var(--black5);padding:10px 14px">
         <div class="todo-item-content">
           <div class="todo-item-title" style="font-size:13px">${m.content}</div>
-          <div class="todo-item-meta">記於 ${m.date}${m.by && m.by !== currentAdmin ? `（${m.by} 記）` : ''}</div>
+          <div class="todo-item-meta">記於 ${m.date}${m.by ? `（${m.by} 記）` : ''}</div>
         </div>
         ${jerryView ? '' : `<button class="btn btn-sm" onclick="trackMeeting('${m.id}')">待追蹤 🔁</button>
         <button class="btn btn-sm btn-primary" onclick="doneMeeting('${m.id}')">已討論 ✓</button>
