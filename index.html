@@ -863,32 +863,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           📢 今天還沒回報喔！記得填寫下方「今日完成事項」👇
         </div>
 
-        <!-- 遊戲化統計 -->
-        <div class="metrics-grid">
-          <div class="metric-card yellow">
-            <div class="metric-label">🔥 連續回報</div>
-            <div class="metric-value"><span id="g-streak">0</span><span style="font-size:16px;color:var(--gray1)"> 天</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">📬 本月回報率</div>
-            <div class="metric-value" id="g-month">–</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">🎯 任務準時率</div>
-            <div class="metric-value" id="g-task">–</div>
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.06em;color:var(--yellow);margin-top:4px" id="g-medal"></div>
-          </div>
-        </div>
-
-        <!-- 本週會議討論事項 -->
-        <div class="card" id="my-meeting-card" style="display:none;border-color:rgba(255,229,0,0.25)">
-          <div class="card-title">📌 會議討論事項 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">Aaron 要跟你團隊討論的內容；你也可以把想討論的事記上來，Aaron 就會看到</span></div>
-          <div id="my-meeting-list"></div>
-          <div style="display:flex;gap:8px;margin-top:12px">
-            <input class="form-input" type="text" id="my-meeting-input" placeholder="你想在會議上跟 Aaron 討論的事…" style="flex:1" onkeydown="if(event.key==='Enter' && !event.isComposing && event.keyCode!==229)addMyMeeting()">
-            <button class="btn btn-primary" onclick="addMyMeeting()" style="white-space:nowrap">我想討論 +</button>
-          </div>
-        </div>
         <!-- 填寫今日回報 -->
         <div class="card">
           <div class="card-title">填寫今日回報</div>
@@ -920,6 +894,61 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           </div>
         </div>
 
+        <!-- 我的待辦 -->
+        <div class="card-title" style="margin-top:24px">我的待辦</div>
+        <div id="my-todo-list"></div>
+        <div id="my-done-section" class="todo-done-section" style="display:none">
+          <div class="todo-done-toggle" onclick="toggleDoneList()">
+            <span id="done-arrow">▸</span> 已完成任務 <span id="my-done-count" style="color:var(--gray2)"></span>
+          </div>
+          <div id="my-done-list" style="display:none"></div>
+        </div>
+
+        <!-- 快速新增任務 -->
+        <div class="card" style="margin-top:24px">
+          <div class="card-title">新增自己的任務</div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">任務名稱</label>
+              <input class="form-input" type="text" id="qt-title" placeholder="輸入任務內容">
+            </div>
+            <div class="form-group">
+              <label class="form-label">截止日期</label>
+              <input class="form-input" type="date" id="qt-deadline">
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" onclick="addMyTodo()">新增任務 +</button>
+          </div>
+        </div>
+
+        <!-- 遊戲化統計 -->
+        <div class="metrics-grid" style="margin-top:24px">
+          <div class="metric-card yellow">
+            <div class="metric-label">🔥 連續回報</div>
+            <div class="metric-value"><span id="g-streak">0</span><span style="font-size:16px;color:var(--gray1)"> 天</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">📬 本月回報率</div>
+            <div class="metric-value" id="g-month">–</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">🎯 任務準時率</div>
+            <div class="metric-value" id="g-task">–</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.06em;color:var(--yellow);margin-top:4px" id="g-medal"></div>
+          </div>
+        </div>
+
+        <!-- 會議討論事項 -->
+        <div class="card" id="my-meeting-card" style="display:none;border-color:rgba(255,229,0,0.25)">
+          <div class="card-title">📌 會議討論事項 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">Aaron 要跟你團隊討論的內容；你也可以把想討論的事記上來，Aaron 就會看到</span></div>
+          <div id="my-meeting-list"></div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <input class="form-input" type="text" id="my-meeting-input" placeholder="你想在會議上跟 Aaron 討論的事…" style="flex:1" onkeydown="if(event.key==='Enter' && !event.isComposing && event.keyCode!==229)addMyMeeting()">
+            <button class="btn btn-primary" onclick="addMyMeeting()" style="white-space:nowrap">我想討論 +</button>
+          </div>
+        </div>
+
         <!-- 團隊交接留言 -->
         <div class="card" id="my-notes-card" style="display:none">
           <div class="card-title">🤝 團隊交接留言 <span style="font-size:11px;color:var(--gray2);text-transform:none;letter-spacing:0;font-weight:400">留給同團隊夥伴的訊息，處理完打勾收掉</span></div>
@@ -940,35 +969,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <div id="my-help-list"></div>
         </div>
 
-
-        <!-- 快速新增任務 -->
-        <div class="card">
-          <div class="card-title">新增自己的任務</div>
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label class="form-label">任務名稱</label>
-              <input class="form-input" type="text" id="qt-title" placeholder="輸入任務內容">
-            </div>
-            <div class="form-group">
-              <label class="form-label">截止日期</label>
-              <input class="form-input" type="date" id="qt-deadline">
-            </div>
-          </div>
-          <div style="display:flex;justify-content:flex-end">
-            <button class="btn btn-primary" onclick="addMyTodo()">新增任務 +</button>
-          </div>
-        </div>
-
-        <!-- 我的待辦 -->
-        <div class="card-title" style="margin-top:24px">我的待辦</div>
-        <div id="my-todo-list"></div>
-        <div id="my-done-section" class="todo-done-section" style="display:none">
-          <div class="todo-done-toggle" onclick="toggleDoneList()">
-            <span id="done-arrow">▸</span> 已完成任務 <span id="my-done-count" style="color:var(--gray2)"></span>
-          </div>
-          <div id="my-done-list" style="display:none"></div>
-        </div>
-
         <!-- 我的回報月曆 -->
         <div style="margin-top:28px">
           <div class="card-title" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray1);margin-bottom:16px;display:flex;align-items:center;gap:10px">回報月曆 <span style="flex:1;height:1px;background:var(--black5);display:block"></span></div>
@@ -984,8 +984,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           </div>
         </div>
 
-        <!-- 我的回報紀錄 -->
-        <div style="margin-top:28px">
+        <!-- 我的回報紀錄（行政團隊隱藏，只用月曆） -->
+        <div style="margin-top:28px" id="my-report-block">
           <div class="card-title" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray1);margin-bottom:16px;display:flex;align-items:center;gap:10px">我的回報紀錄 <span style="flex:1;height:1px;background:var(--black5);display:block"></span></div>
           <div id="my-report-list"><div class="empty"><span class="empty-icon">📭</span>尚無回報紀錄</div></div>
         </div>
@@ -1412,26 +1412,25 @@ async function loadAllData() {
 
   setLoadingState(true);
   try {
-    const [repRes, todRes, memRes, mtRes, cfgRes, noteRes, helpRes, evRes, parRes] = await Promise.all([
-      apiFetch('getReports'),
-      apiFetch('getTodos'),
-      apiFetch('getMembers'),
-      apiFetch('getMeetings'),
-      apiFetch('getMeetingConfigs'),
-      apiFetch('getNotes'),
-      apiFetch('getHelps'),
-      apiFetch('getCalendarEvents'),
-      apiFetch('getPartners')
+    // 一次抓全部（getAll）＋ 行事曆另外並行，只有 2 個往返，載入快很多
+    const [allRes, evRes] = await Promise.all([
+      apiFetch('getAll'),
+      apiFetch('getCalendarEvents')
     ]);
-    if (repRes.success) reports = repRes.data.map((r, i) => ({ ...r, id: r.id ? r.id.toString() : 'r'+i, date: normalizeDate(r.date) }));
-    if (todRes.success) todos = todRes.data.map(t => ({ ...t, id: t.id.toString(), deadline: normalizeDate(t.deadline), completedDate: t.completedDate ? normalizeDate(t.completedDate) : null, source: t.source || '', handoff: t.handoff || '', reschedule: t.reschedule || '' }));
-    if (memRes && memRes.success) { members = memRes.data || []; try { localStorage.setItem('nid_members', JSON.stringify(members)); } catch(e) {} }
+    if (allRes && allRes.success) {
+      reports = (allRes.reports || []).map((r, i) => ({ ...r, id: r.id ? r.id.toString() : 'r'+i, date: normalizeDate(r.date) }));
+      todos = (allRes.todos || []).map(t => ({ ...t, id: t.id.toString(), deadline: normalizeDate(t.deadline), completedDate: t.completedDate ? normalizeDate(t.completedDate) : null, source: t.source || '', handoff: t.handoff || '', reschedule: t.reschedule || '' }));
+      members = allRes.members || [];
+      try { localStorage.setItem('nid_members', JSON.stringify(members)); } catch(e) {}
+      meetings = (allRes.meetings || []).map(m => ({ ...m, id: m.id.toString(), date: normalizeDate(m.date), doneDate: m.doneDate ? normalizeDate(m.doneDate) : '', by: m.by || '' }));
+      meetingConfigs = allRes.meetingConfigs || [];
+      notes = (allRes.notes || []).map(n => ({ ...n, id: n.id.toString(), date: normalizeDate(n.date) }));
+      helps = (allRes.helps || []).map(h => ({ ...h, id: h.id.toString(), date: normalizeDate(h.date) }));
+      if (allRes.brands) brands = allRes.brands;
+      partners = allRes.partners || [];
+      applyPartners();
+    }
     if (evRes && evRes.success) calEvents = evRes.data || [];
-    if (parRes && parRes.success) { partners = parRes.data || []; applyPartners(); }
-    if (mtRes && mtRes.success) meetings = (mtRes.data || []).map(m => ({ ...m, id: m.id.toString(), date: normalizeDate(m.date), doneDate: m.doneDate ? normalizeDate(m.doneDate) : '', by: m.by || '' }));
-    if (cfgRes && cfgRes.success) meetingConfigs = cfgRes.data || [];
-    if (noteRes && noteRes.success) notes = (noteRes.data || []).map(n => ({ ...n, id: n.id.toString(), date: normalizeDate(n.date) }));
-    if (helpRes && helpRes.success) helps = (helpRes.data || []).map(h => ({ ...h, id: h.id.toString(), date: normalizeDate(h.date) }));
     updateHelpBadge();
     populateNameSelect();
     populateMeetingSelect();
@@ -2011,6 +2010,9 @@ async function addMyMeeting() {
 function renderMyReports() {
   const el = document.getElementById('my-report-list');
   if (!el) return;
+  // 行政團隊只用月曆看回報，隱藏條列紀錄
+  const block = document.getElementById('my-report-block');
+  if (block) block.style.display = (myTeam === '行政團隊') ? 'none' : '';
   const myReps = reports.filter(r => r.name === myName).sort((a,b) => normalizeDate(b.date).localeCompare(normalizeDate(a.date)));
   if (!myReps.length) {
     el.innerHTML = '<div class="empty"><span class="empty-icon">📭</span>尚無回報紀錄</div>';
