@@ -2472,27 +2472,29 @@ async function confirmPersonalEdit() {
   const brand = document.getElementById('pe-brand').value;
   if (!content) { showToast('內容不能空白'); return; }
   const who = currentAdmin || 'Aaron';
+  const id = peTargetId;   // ★ 先記住 ID，closePersonalEdit() 會把 peTargetId 清成 null
+  const mode = peMode;
 
-  if (peMode === 'atodo') {
+  if (mode === 'atodo') {
     const deadline = document.getElementById('pe-date').value;
     if (!deadline) { showToast('請選擇截止日期'); return; }
-    const t = atodos.find(x => x.id.toString() === peTargetId);
+    const t = atodos.find(x => x.id.toString() === id);
     if (t) { t.title = content; t.brand = brand; t.deadline = deadline; }
     closePersonalEdit();
     renderATodos();
     showToast('已更新 ✓');
     if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-      const res = await apiFetch('editATodo', { id: peTargetId, title: content, brand, deadline, who });
+      const res = await apiFetch('editATodo', { id: id, title: content, brand, deadline, who });
       if (!res.success) showToast('⚠ 同步失敗，請重新整理');
     }
   } else {
-    const l = alogs.find(x => x.id.toString() === peTargetId);
+    const l = alogs.find(x => x.id.toString() === id);
     if (l) { l.content = content; l.brand = brand; }
     closePersonalEdit();
     renderALogs();
     showToast('已更新 ✓');
     if (API_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-      const res = await apiFetch('editALog', { id: peTargetId, content, brand, who });
+      const res = await apiFetch('editALog', { id: id, content, brand, who });
       if (!res.success) showToast('⚠ 同步失敗，請重新整理');
     }
   }
